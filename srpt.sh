@@ -152,21 +152,21 @@ function leerArgs() {
 
 function leerArchivo() {
 	if [ ! -f $filename ]; then
-		echo "File not found"
+		echo "Archivo \"${filename}\" no válido."
 		exit 1
 	fi
 	i=0
-	while IFS=, read line val; do
-		if [[ ! $line =~ ^[#+] ]]; then
-			proc_size[$i]="${line//[[:blank:]]/}"
-			proc_time[$i]="$(echo $val | tr -d '\r')"
+	IFS=$'\n'; set -f; for line in $(<$filename); do
+		if [[ ! $line =~ ^[#+] ]] && [[ ! -z $(echo $line | tr -d '\r') ]]; then
+			proc_size[$i]=$(echo $line | cut -d',' -f1 | tr -d ' ')
+			proc_time[$i]=$(echo $line | cut -d',' -f2 | tr -d ' ')
 			((i++))
 		else
 			if [[ $line =~ ^[+] ]]; then
-				mem_size=$(echo $val | tr -d '\r')
+				mem_size=$(echo $(echo $line | cut -d',' -f2) | tr -d '\r')
 			fi
 		fi
-	done < $filename
+	done; set +f; unset IFS
 	if [ ! $i -eq 0 ]; then
 		proc_count=$i
 	fi
