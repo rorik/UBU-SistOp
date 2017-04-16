@@ -38,6 +38,7 @@ echo "#######################################################################" >
 #_____________________________________________
 # COMIENZO DE FUNCIONES
 #_____________________________________________
+
 function header() {
 	if [ $1 -eq 0 ]; then
 		clear
@@ -159,17 +160,60 @@ function leerArchivo() {
 	IFS=$'\n'; set -f; for line in $(<$filename); do
 		if [[ ! $line =~ ^[#+] ]] && [[ ! -z $(echo $line | tr -d '\r') ]]; then
 			proc_size[$i]=$(echo $line | cut -d',' -f1 | tr -d ' ')
-			proc_time[$i]=$(echo $line | cut -d',' -f2 | tr -d ' ')
+			proc_time[$i]=$(echo $line | cut -d',' -f2 | tr -d ' ' | tr -d '\r')
 			((i++))
 		else
 			if [[ $line =~ ^[+] ]]; then
-				mem_size=$(echo $(echo $line | cut -d',' -f2) | tr -d '\r')
+				mem_size=$(echo $(echo $line | cut -d',' -f2) | tr -d ' ' | tr -d '\r')
 			fi
 		fi
 	done; set +f; unset IFS
 	if [ ! $i -eq 0 ]; then
 		proc_count=$i
 	fi
+}
+
+function actualizarInterfaz(){
+	header 0
+	echo -e "           \e[48;5;17mBloques Utilizables de Memoria: $mem_size , Número de Procesos: $proc_count\e[0m"
+	header 1
+	
+	echo -ne "\e[38;5;20m#" ; for i in {1..50}; do
+		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %4s\n" "${proc_size[0]}" "${proc_time[0]}"
+	
+	echo -ne "\e[38;5;19m#" ; for i in {51..100}; do
+		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	done ; echo -ne "\e[38;5;19m#\e[0m"; printf " %3s   - %4s\n" "${proc_size[1]}" "${proc_time[1]}"
+	
+	echo -ne "\e[38;5;18m#" ; for i in {101..150}; do
+		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	done ; echo -ne "\e[38;5;18m#\e[0m"; printf " %3s   - %4s\n" "${proc_size[2]}" "${proc_time[2]}"
+	
+	echo -ne "\e[38;5;17m#" ; for i in {151..200}; do
+		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	done ; echo -ne "\e[38;5;17m#\e[0m"; printf " %3s   - %4s\n" "${proc_size[3]}" "${proc_time[3]}"
+	
+	header 1
+}
+
+function procSort() {
+	local tmp_proc_time=("$@")
+	local tmp_proc_size=("${proc_size[@]}")
+	for ((ii=0; ii<proc_count; ii++)); do
+		local i=0
+		local max=0
+		for el in "${tmp_proc_time[@]}"; do
+			if [[ $el -gt $max ]]; then
+				max=$el
+				max_i=$i
+			fi
+			((i++))
+		done
+		proc_size["$(expr $proc_count - $ii - 1)"]="${tmp_proc_size[${max_i}]}"
+		proc_time["$(expr $proc_count - $ii - 1)"]="${max}"
+		tmp_proc_time["${max_i}"]=0
+	done
 }
 
 #_____________________________________________
@@ -191,6 +235,9 @@ else
 	leerArgs "$@"
 fi
 
-header 0
-echo -e "           \e[48;5;17mBloques Utilizables de Memoria: $mem_size , Número de Procesos: $proc_count\e[0m"
-header 1
+
+procSort "${proc_time[@]}"
+
+read -p "Used Memory Blocks: " mem_used
+mem_used_round=$(expr $mem_used \* 200  / $mem_size)
+actualizarInterfaz
