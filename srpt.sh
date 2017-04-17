@@ -190,21 +190,21 @@ function actualizarInterfaz(){
 	
 	echo -ne "\e[38;5;17m#" ; for i in {1..50}; do
 		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[0]}" "${proc_time[0]}" "${proc_id[0]}"
+	done ; echo -ne "\e[38;5;20m#\e[0m"; echo "  TMÑO    TMPO     ID"
 	
 	echo -ne "\e[38;5;17m#" ; for i in {51..100}; do
 		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[1]}" "${proc_time[1]}" "${proc_id[1]}"
+	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[0]}" "${proc_time[0]}" "${proc_id[0]}"
 	
 	echo -ne "\e[38;5;17m#" ; for i in {101..150}; do
 		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[2]}" "${proc_time[2]}" "${proc_id[2]}"
+	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[1]}" "${proc_time[1]}" "${proc_id[1]}"
 	
 	echo -ne "\e[38;5;17m#" ; for i in {151..200}; do
 		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[3]}" "${proc_time[3]}" "${proc_id[3]}"
+	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[2]}" "${proc_time[2]}" "${proc_id[2]}"
 	
-	for i in {17..21} {21..21} ; do echo -ne "\e[38;5;${i}m########" ; done ; echo -ne "\e[38;5;20m####\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[4]}" "${proc_time[4]}" "${proc_id[4]}"
+	for i in {17..21} {21..21} ; do echo -ne "\e[38;5;${i}m########" ; done ; echo -ne "\e[38;5;20m####\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[3]}" "${proc_time[3]}" "${proc_id[3]}"
 	
 	tmp_swp_rows=5
 	tmp_swp_len=50
@@ -238,7 +238,7 @@ function actualizarInterfaz(){
 			else
 				printf  "%*s" "$(expr $tmp_swp_len - $tmp_swp_cur_len - 1)" ""
 			fi
-			echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[$(expr $tmp_swp_cur_row + 4)]}" "${proc_time[$(expr $tmp_swp_cur_row + 4)]}" "${proc_id[$(expr $tmp_swp_cur_row + 4)]}"
+			echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[$(expr $tmp_swp_cur_row + 3)]}" "${proc_time[$(expr $tmp_swp_cur_row + 3)]}" "${proc_id[$(expr $tmp_swp_cur_row + 3)]}"
 			tmp_swp_cur_len=0
 			((tmp_swp_cur_row++))
 		fi
@@ -247,23 +247,36 @@ function actualizarInterfaz(){
 }
 
 function procSort() {
-	local tmp_proc_time=("$@")
-	local tmp_proc_size=("${proc_size[@]}")
-	local tmp_proc_id=("${proc_id[@]}")
-	for ((ii=0; ii<proc_count; ii++)); do
-		local i=0
+	local -n tmp_proc_id=$1
+	local -n tmp_proc_size=$2
+	local -n tmp_proc_time=$3
+	local tmp_tmp_proc_id=("${tmp_proc_id[@]}")
+	local tmp_tmp_proc_size=("${tmp_proc_size[@]}")
+	local tmp_tmp_proc_time=("${tmp_proc_time[@]}")
+	local tmp_proc_count="${#tmp_proc_id[@]}"
+	local i=0
+	
+	for el in "${tmp_tmp_proc_id[@]}"; do
+		local ii=0
 		local max=0
-		for el in "${tmp_proc_time[@]}"; do
-			if [[ $el -gt $max ]]; then
-				max=$el
-				max_i=$i
+		for tm in "${tmp_tmp_proc_time[@]}"; do
+			if [[ $tm -gt $max ]]; then
+				max=$tm
+				max_i=$ii
 			fi
-			((i++))
+			((ii++))
 		done
-		proc_size["$(expr $proc_count - $ii - 1)"]="${tmp_proc_size[${max_i}]}"
-		proc_time["$(expr $proc_count - $ii - 1)"]="${max}"
-		proc_id["$(expr $proc_count - $ii - 1)"]="${tmp_proc_id[${max_i}]}"
-		tmp_proc_time["${max_i}"]=0
+		#echo "${max} at ${max_i} = ${tmp_tmp_proc_id[$max_i]} -> $(expr $tmp_proc_count - $i - 1)"
+		tmp_proc_id[$(expr $tmp_proc_count - $i - 1)]="${tmp_tmp_proc_id[$max_i]}"
+		tmp_proc_size[$(expr $tmp_proc_count - $i - 1)]="${tmp_tmp_proc_size[$max_i]}"
+		tmp_proc_time[$(expr $tmp_proc_count - $i - 1)]="${tmp_tmp_proc_time[$max_i]}"
+		unset tmp_tmp_proc_id[$max_i]
+		unset tmp_tmp_proc_size[$max_i]
+		unset tmp_tmp_proc_time[$max_i]
+		tmp_tmp_proc_id=( "${tmp_tmp_proc_id[@]}" )
+		tmp_tmp_proc_size=( "${tmp_tmp_proc_size[@]}" )
+		tmp_tmp_proc_time=( "${tmp_tmp_proc_time[@]}" )
+		((i++))
 	done
 }
 
@@ -308,8 +321,7 @@ function step() {
 	elif [[ $REPLY -eq 3 ]]; then
 		echo
 	elif [[ $REPLY -eq 4 ]]; then
-		echo
-		procSort "${proc_time[@]}"
+		procSort proc_id proc_size proc_time
 	elif [[ $REPLY -eq 5 ]]; then
 		exit 1
 	fi
@@ -320,8 +332,8 @@ function step() {
 
 function getIndex() {
 	local tmp_value="${1}"
-    shift
-    local tmp_array=("${@}")
+	shift
+	local tmp_array=("${@}")
 	
 	for i in "${!tmp_array[@]}"; do
 	   if [[ "${tmp_array[$i]}" = "${tmp_value}" ]]; then
