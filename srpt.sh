@@ -43,22 +43,22 @@ function header() {
 	if [ $1 -eq 0 ]; then
 		clear
 		clear
-		for i in {17..21} {21..17} ; do echo -en "\e[38;5;${i}m########" ; done ; echo -e "\e[0m"
-		echo -e "\e[38;5;17m#\e[0m           \e[48;5;17mAlgoritmo SRPT, con paginación FIFO de memoria continua\e[0m            \e[38;5;17m#"
-		echo -e "\e[38;5;17m#\e[0m         \e[48;5;17mde particiones fijas e iguales, ajuste primero y reubicable\e[0m          \e[38;5;17m#"
+		header 1
+		echo -e "\e[38;5;17m#\e[0m           \e[48;5;17mAlgoritmo SRPT, con paginación FIFO de memoria continua\e[0m            \e[38;5;17m#" 
+		echo -e "\e[38;5;17m#\e[0m        \e[48;5;17mde particiones fijas e iguales, ajuste primero y reubicable\e[0m          \e[38;5;17m#"
 	else
 		for i in {17..21} {21..17} ; do echo -en "\e[38;5;${i}m########" ; done ; echo -e "\e[0m"
 	fi
 }
 
 function pedirDatos() {
-	if [ $1 -eq 0 ]; then
-		if [ -z "$mem_size" ]; then
-			until [[ $mem_size =~ ^[0-9]+$ ]] && [[ ! $mem_size -eq 0 ]]; do
-				read -p "Tamaño (en bloques) de la memoria: " mem_size
+	if [ $1 -eq 0 ]; then #si el argumento es 0
+		if [ -z "$mem_size" ]; then #si el tamaño de memoria nulo
+			until [[ $mem_size =~ ^[0-9]+$ ]] && [[ ! $mem_size -eq 0 ]]; do #hasta el tamaño de memoria empiece entre 0 y 9 Y sea diferente a 0 hacer...
+				read -p "Tamaño (en bloques) de la memoria: " mem_size #te pide que escribas algo y eso eso va a ser el tamaño de memoria
 			done
 		fi
-		if [ -z "$proc_count" ]; then
+		if [ -z "$proc_count" ]; then #mismo que arriba pero cambiando variable
 			until [[ $proc_count =~ ^[0-9]+$ ]] && [[ ! $proc_count -eq 0 ]]; do
 				read -p "Número de procesos: " proc_count
 			done
@@ -154,25 +154,25 @@ function leerArgs() {
 	pedirDatos 0
 }
 
-function leerArchivo() {
-	if [ ! -f $filename ]; then
-		echo "Archivo \"${filename}\" no válido."
-		exit 1
-	fi
-	i=0
-	IFS=$'\n'; set -f; for line in $(<$filename); do
-		if [[ ! $line =~ ^[#+] ]] && [[ ! -z $(echo $line | tr -d '\r') ]]; then
-			swp_proc_size[$i]=$(echo $line | cut -d',' -f1 | tr -d ' ')
-			swp_proc_time[$i]=$(echo $line | cut -d',' -f2 | tr -d ' ')
-			swp_proc_id[$i]=$(echo $line | cut -d',' -f3 | tr -d ' ' | tr -d '\r')
-			((i++))
+function leerArchivo() { 
+	if [ ! -f $filename ]; then #si no existe el archivo filename
+		echo "Archivo \"${filename}\" no válido." #imprime esto
+		exit 1 #termina la ejecucion 
+	fi #fin del if (if al reves para indicar el fin(fi))
+	local i=0 #inicializa la variable i empezando desde 0
+	IFS=$'\n'; set -f; for line in $(<$filename); do #separa el archivo por finales de linea, set -f deshabilita el globbing, para cada linea en el archivo haz...
+		if [[ ! $line =~ ^[#+] ]] && [[ ! -z $(echo $line | tr -d '\r') ]]; then #si la linea no empieza por # o +, y la linea menos el enter esta vacia entonces... (tr -d elimina)
+			swp_proc_size[$i]=$(echo $line | cut -d',' -f1 | tr -d ' ') #guardar el proceso i de tamaño coge el primer elemento sepradao por comas y le quita los espacios
+			swp_proc_time[$i]=$(echo $line | cut -d',' -f2 | tr -d ' ') #lo mismo pero proceso de tiempo
+			swp_proc_id[$i]=$(echo $line | cut -d',' -f3 | tr -d ' ' | tr -d '\r') #igual pero el proceso de id y quita los espacios y el retroceso
+			((i++)) #aumenta la i
 		else
 			if [[ $line =~ ^[+] ]]; then
-				mem_size=$(echo $(echo $line | cut -d',' -f2) | tr -d ' ' | tr -d '\r')
-			fi
+				mem_size=$(echo $(echo $line | cut -d',' -f2) | tr -d ' ' | tr -d '\r') 
+			fi 
 		fi
-	done; set +f; unset IFS
-	if [ ! $i -eq 0 ]; then
+	done; set +f; unset IFS #habilita el globbing y borra el IFS
+	if [ ! $i -eq 0 ]; then #establece proc_count al numero de procesos
 		proc_count=$i
 	fi
 }
@@ -346,14 +346,14 @@ function getIndex() {
 # FINAL DE FUNCIONES
 #_____________________________________________
 
-header 0 ; header 1
+header 0 ; header 1 #muestran la cabecera
 
 if [ $# -eq 0 ]; then
-	read -p "Introducción de datos por archivo (s/n): " -n 1 -r ; echo
-	if [[ $REPLY =~ ^[SsYy]$ ]]; then
-		read -p "Nombre del archivo: " filename
+	read -p "Introducción de datos por archivo (s/n): " -n 1 -r ; echo  #read -p escribe algo y te pide un texto en la misma linea, read -n x espera x caracteres read, -r si pulsas enter que lo interprete como tecla y no como aceptar
+	if [[ $REPLY =~ ^[SsYy]$ ]]; then #si la respuesta esta entre esos valores entonces...
+		read -p "Nombre del archivo: " filename #pide nombre de archivo y lo guarda en filename
 		leerArchivo
-		pedirDatos 0
+		pedirDatos 0 
 	else
 		pedirDatos 1
 	fi
