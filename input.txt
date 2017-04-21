@@ -1,0 +1,8 @@
++MEMORIA: 128
++SISTEMA: 8
+
+# Bloques ; SEQ(x,y,z) ; T. Llegada ; (OPCIONAL) ID #
+
+3 ; 1,2,3,4,5,6,7 ; 0 ; nano
+2 ; 7,1,2 ; 0 ; top
+6 ; 9,17,18,19,20,1,2,4,12,17,9,1,7 ; 1 ; terminal
