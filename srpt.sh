@@ -43,52 +43,72 @@ function header() {
 	if [ $1 -eq 0 ]; then
 		clear
 		clear
-		for i in {17..21} {21..17} ; do echo -en "\e[38;5;${i}m########" ; done ; echo -e "\e[0m"
+		header 1
 		echo -e "\e[38;5;17m#\e[0m           \e[48;5;17mAlgoritmo SRPT, con paginación FIFO de memoria continua\e[0m            \e[38;5;17m#"
 		echo -e "\e[38;5;17m#\e[0m         \e[48;5;17mde particiones fijas e iguales, ajuste primero y reubicable\e[0m          \e[38;5;17m#"
-	else
+	elif [ $1 -eq 1 ]; then
 		for i in {17..21} {21..17} ; do echo -en "\e[38;5;${i}m########" ; done ; echo -e "\e[0m"
+	else
+		header 0
+		printf "\e[38;5;17m#\e[0m        \e[48;5;17mBloques Utilizables de Memoria: "
+		if [[ -z $mem_tamano_abreviacion ]]; then
+			printf " %3d, " "$mem_tamano_redondeado"
+		else
+			printf "%3d%1s, " "$mem_tamano_redondeado" "$mem_tamano_abreviacion"
+		fi
+		printf "Número de Procesos: "
+		if [[ -z $proc_count_abreviacion ]]; then
+			printf " %3d" "$proc_count_redondeado"
+		else
+			printf "%3d%1s" "$proc_count_round" "$proc_count_abreviacion"
+		fi
+		printf "\e[0m        \e[38;5;17m#\n"
+		header 1
 	fi
 }
 
 function pedirDatos() {
-	if [ $1 -eq 0 ]; then
-		if [ -z "$mem_size" ]; then
-			until [[ $mem_size =~ ^[0-9]+$ ]] && [[ ! $mem_size -eq 0 ]]; do
-				read -p "Tamaño (en bloques) de la memoria: " mem_size
-			done
-		fi
-		if [ -z "$proc_count" ]; then
-			until [[ $proc_count =~ ^[0-9]+$ ]] && [[ ! $proc_count -eq 0 ]]; do
-				read -p "Número de procesos: " proc_count
-			done
-		fi
-		if [ -z "$swp_proc_size" ]; then
-			for i in $(seq 0 $(expr $proc_count - 1 )); do
-				until [[ "${swp_proc_size[$i]}" =~ ^[0-9]+$ ]] && [[ ! "${swp_proc_size[$i]}" -eq 0 ]]; do
-					read -p "[${i}] Bloques: " swp_proc_size[$i]
-				done
-				until [[ "${swp_proc_time[$i]}" =~ ^[0-9]+$ ]] && [[ ! "${swp_proc_time[$i]}" -eq 0 ]]; do
-					read -p "[${i}] Tiempo: " swp_proc_time[$i]
-				done
-				swp_proc_id[$i]=$i
-			done
-		fi
-	else
-		until [[ $mem_size =~ ^[0-9]+$ ]] && [[ ! $mem_size -eq 0 ]]; do
-			read -p "Tamaño (en bloques) de la memoria: " mem_size
+	if [ -z "$mem_tamano" ]; then
+		until [[ $mem_tamano =~ ^[0-9]+$ ]] && [[ ! $mem_tamano -eq 0 ]]; do
+			printf "\e[1A%80s\r" " "
+			read -p "Tamaño (en bloques) de la memoria: " mem_tamano
+			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 		done
+		printf "%80s\n" " "
+	fi
+	
+	if [ -z "$proc_count" ]; then
 		until [[ $proc_count =~ ^[0-9]+$ ]] && [[ ! $proc_count -eq 0 ]]; do
+			printf "\e[1A%80s\r" " "
 			read -p "Número de procesos: " proc_count
+			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 		done
+		printf "%80s\n" " "
+	fi
+	
+	if [ -z "$proc_id" ]; then
 		for i in $(seq 0 $(expr $proc_count - 1 )); do
-			until [[ "${swp_proc_size[$i]}" =~ ^[0-9]+$ ]] && [[ ! "${swp_proc_size[$i]}" -eq 0 ]]; do
-				read -p "[${i}] Bloques: " swp_proc_size[$i]
+			until [[ "${proc_tamano[$i]}" =~ ^[0-9]+$ ]] && [[ ! "${proc_tamano[$i]}" -eq 0 ]]; do
+				printf "\e[1A%80s\r" " "
+				read -p "[P${i}] Bloques en memoria: " proc_tamano[$i]
+				printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 			done
-			until [[ "${swp_proc_time[$i]}" =~ ^[0-9]+$ ]] && [[ ! "${swp_proc_time[$i]}" -eq 0 ]]; do
-				read -p "[${i}] Tiempo: " swp_proc_time[$i]
+			printf "%80s\n" " "
+			
+			until [[ "${proc_tiempo_llegada[$i]}" =~ ^[0-9]+$ ]]; do
+				printf "\e[1A%80s\r" " "
+				read -p "[P${i}] Tiempo de llegada: " proc_tiempo_llegada[$i]
+				printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 			done
-			swp_proc_id[$i]=$i
+			printf "%80s\n" " "
+			
+			printf "\e[1A%80s\r" " "
+			read -p "[P${i}] Secuencia de páginas: " proc_paginas[$i]
+			echo
+			
+			proc_id[$i]="P${i}"
+			proc_tiempo_ejecucion[$i]=0
+			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)			
 		done
 	fi
 }
@@ -108,7 +128,7 @@ function leerArgs() {
 			;;
 		-m|--memoria)
 		  if [ -n "$2" ]; then
-			tmp_mem_size="$2"
+			local tmp_mem_tamano="$2"
 			shift 2
 			continue
 		  else
@@ -138,20 +158,8 @@ function leerArgs() {
 	  esac
 	  shift
 	done
-	
-	
-	if [ ! -z "$proc_count" ]; then
-		if [[ ! $proc_count =~ ^[0-9]+$ ]] || [[ $proc_count -eq 0 ]]; then
-			proc_count=;
-		fi
-	fi
 	if [ ! -z "$filename" ]; then leerArchivo; fi
-	if [ ! -z "$tmp_mem_size" ]; then
-		if [[ $tmp_mem_size =~ ^[0-9]+$ ]] && [[ ! $tmp_mem_size -eq 0 ]]; then
-			mem_size=$tmp_mem_size;
-		fi
-	fi
-	pedirDatos 0
+	if [ ! -z "$tmp_mem_tamano" ]; then mem_tamano=$tmp_mem_tamano; fi
 }
 
 function leerArchivo() {
@@ -161,14 +169,29 @@ function leerArchivo() {
 	fi
 	i=0
 	IFS=$'\n'; set -f; for line in $(<$filename); do
-		if [[ ! $line =~ ^[#+] ]] && [[ ! -z $(echo $line | tr -d '\r') ]]; then
-			swp_proc_size[$i]=$(echo $line | cut -d',' -f1 | tr -d ' ')
-			swp_proc_time[$i]=$(echo $line | cut -d',' -f2 | tr -d ' ')
-			swp_proc_id[$i]=$(echo $line | cut -d',' -f3 | tr -d ' ' | tr -d '\r')
+		line=$(echo $line | tr -d ' ' | tr -d '\r')
+		if [[ ! $line =~ ^[#+] ]] && [[ ! -z $(echo $line) ]]; then
+			proc_tamano[$i]=$(echo $line | cut -d ';' -f1)
+			proc_paginas[$i]=$(echo $line | cut -d ';' -f2)
+			proc_tiempo_llegada[$i]=$(echo $line | cut -d';' -f3)
+			proc_id[$i]=$(echo $line | cut -d';' -f4)
+			proc_tiempo_ejecucion[$i]=0
+			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
 			((i++))
 		else
 			if [[ $line =~ ^[+] ]]; then
-				mem_size=$(echo $(echo $line | cut -d',' -f2) | tr -d ' ' | tr -d '\r')
+				case $(echo $line | tr -d '+' | cut -d ':' -f1) in
+					"MEMORIA")
+						mem_tamano=$(echo $line | cut -d ':' -f2)
+						;;
+					"SISTEMA")
+						mem_sistema=$(echo $line | cut -d ':' -f2)
+						;;
+					*)
+						echo "CONFIGURACIÓN EN FICHERO NO VÁLIDA"
+						exit 1
+						;;
+				esac
 			fi
 		fi
 	done; set +f; unset IFS
@@ -182,100 +205,97 @@ function actualizarInterfaz(){
 	for proc in "${proc_size[@]}"; do
 		mem_used=$(expr $mem_used + $proc)
 	done
-	mem_used_round=$(expr $mem_used \* 200  / $mem_size)
+	mem_used_round=$(expr $mem_used \* 200  / $mem_tamano)
 	
-	header 0
-	printf "\e[38;5;17m#\e[0m        \e[48;5;17mBloques Utilizables de Memoria: %3d%1s, Número de Procesos: %3d%1s\e[0m        \e[38;5;17m#\n" "$mem_size_round" "$mem_size_abrv" "$proc_count_round" "$proc_count_abrv"
-	header 1
+	header 2
 	
-	echo -ne "\e[38;5;17m#" ; for i in {1..50}; do
-		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; echo "  TMÑO    TMPO     ID"
+	# echo -ne "\e[38;5;17m#" ; for i in {1..50}; do
+		# if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	# done ; echo -ne "\e[38;5;20m#\e[0m"; echo "  TMÑO    TMPO     ID"
 	
-	echo -ne "\e[38;5;17m#" ; for i in {51..100}; do
-		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[0]}" "${proc_time[0]}" "${proc_id[0]}"
+	# echo -ne "\e[38;5;17m#" ; for i in {51..100}; do
+		# if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	# done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[0]}" "${proc_time[0]}" "${proc_id[0]}"
 	
-	echo -ne "\e[38;5;17m#" ; for i in {101..150}; do
-		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[1]}" "${proc_time[1]}" "${proc_id[1]}"
+	# echo -ne "\e[38;5;17m#" ; for i in {101..150}; do
+		# if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	# done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[1]}" "${proc_time[1]}" "${proc_id[1]}"
 	
-	echo -ne "\e[38;5;17m#" ; for i in {151..200}; do
-		if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
-	done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[2]}" "${proc_time[2]}" "${proc_id[2]}"
+	# echo -ne "\e[38;5;17m#" ; for i in {151..200}; do
+		# if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
+	# done ; echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[2]}" "${proc_time[2]}" "${proc_id[2]}"
 	
-	for i in {17..21} {21..21} ; do echo -ne "\e[38;5;${i}m########" ; done ; echo -ne "\e[38;5;20m####\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[3]}" "${proc_time[3]}" "${proc_id[3]}"
+	# for i in {17..21} {21..21} ; do echo -ne "\e[38;5;${i}m########" ; done ; echo -ne "\e[38;5;20m####\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[3]}" "${proc_time[3]}" "${proc_id[3]}"
 	
-	tmp_swp_rows=5
-	tmp_swp_len=50
-	tmp_swp_cur_row=1
-	tmp_swp_cur_len=0
-	tmp_swp_cur_el=0
-	while [[ $tmp_swp_cur_row -le $tmp_swp_rows ]]; do
-		tmp_swp_el="${swp_proc_id[$tmp_swp_cur_el]}"
-		tmp_swp_el_size="${#tmp_swp_el}"
-		tmp_swp_el_status="${swp_proc_status[$tmp_swp_cur_el]}"
-		if [[ ! -z $tmp_swp_el ]] && [[ $(expr $tmp_swp_cur_len + $tmp_swp_el_size + 4) -lt $tmp_swp_len ]]; then
-			if [[ $tmp_swp_cur_len -eq 0 ]]; then
-				echo -ne "\e[38;5;17m#\e[0m "
-				if [[ $tmp_swp_el_status -eq 0 ]]; then echo -ne "${tmp_swp_el}"
-				elif [[ $tmp_swp_el_status -eq 1 ]]; then echo -ne "\e[31m${tmp_swp_el}\e[39m"
-				else echo -ne"\e[32m${tmp_swp_el}\e[39m"
-				fi
-				tmp_swp_cur_len=$(expr $tmp_swp_cur_len + $tmp_swp_el_size)
-			else
-				echo -ne ", "
-				if [[ $tmp_swp_el_status -eq 0 ]]; then echo -n "${tmp_swp_el}"
-				elif [[ $tmp_swp_el_status -eq 1 ]]; then echo -ne "\e[31m${tmp_swp_el}\e[39m"
-				else echo -ne"\e[32m${tmp_swp_el}\e[39m"
-				fi
-				tmp_swp_cur_len=$(expr $tmp_swp_cur_len + $tmp_swp_el_size + 2)
-			fi
-			((tmp_swp_cur_el++))
-		else
-			if [[ $tmp_swp_cur_len -eq 0 ]]; then
-				printf "\e[38;5;17m#\e[0m%50c" ' '
-			else
-				printf  "%*s" "$(expr $tmp_swp_len - $tmp_swp_cur_len - 1)" ""
-			fi
-			echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[$(expr $tmp_swp_cur_row + 3)]}" "${proc_time[$(expr $tmp_swp_cur_row + 3)]}" "${proc_id[$(expr $tmp_swp_cur_row + 3)]}"
-			tmp_swp_cur_len=0
-			((tmp_swp_cur_row++))
-		fi
-	done
-	header 1
+	# tmp_swp_rows=5
+	# tmp_swp_len=50
+	# tmp_swp_cur_row=1
+	# tmp_swp_cur_len=0
+	# tmp_swp_cur_el=0
+	# while [[ $tmp_swp_cur_row -le $tmp_swp_rows ]]; do
+		# tmp_swp_el="${swp_proc_id[$tmp_swp_cur_el]}"
+		# tmp_swp_el_size="${#tmp_swp_el}"
+		# tmp_swp_el_status="${swp_proc_status[$tmp_swp_cur_el]}"
+		# if [[ ! -z $tmp_swp_el ]] && [[ $(expr $tmp_swp_cur_len + $tmp_swp_el_size + 4) -lt $tmp_swp_len ]]; then
+			# if [[ $tmp_swp_cur_len -eq 0 ]]; then
+				# echo -ne "\e[38;5;17m#\e[0m "
+				# if [[ $tmp_swp_el_status -eq 0 ]]; then echo -ne "${tmp_swp_el}"
+				# elif [[ $tmp_swp_el_status -eq 1 ]]; then echo -ne "\e[31m${tmp_swp_el}\e[39m"
+				# else echo -ne"\e[32m${tmp_swp_el}\e[39m"
+				# fi
+				# tmp_swp_cur_len=$(expr $tmp_swp_cur_len + $tmp_swp_el_size)
+			# else
+				# echo -ne ", "
+				# if [[ $tmp_swp_el_status -eq 0 ]]; then echo -n "${tmp_swp_el}"
+				# elif [[ $tmp_swp_el_status -eq 1 ]]; then echo -ne "\e[31m${tmp_swp_el}\e[39m"
+				# else echo -ne"\e[32m${tmp_swp_el}\e[39m"
+				# fi
+				# tmp_swp_cur_len=$(expr $tmp_swp_cur_len + $tmp_swp_el_size + 2)
+			# fi
+			# ((tmp_swp_cur_el++))
+		# else
+			# if [[ $tmp_swp_cur_len -eq 0 ]]; then
+				# printf "\e[38;5;17m#\e[0m%50c" ' '
+			# else
+				# printf  "%*s" "$(expr $tmp_swp_len - $tmp_swp_cur_len - 1)" ""
+			# fi
+			# echo -ne "\e[38;5;20m#\e[0m"; printf " %3s   - %3s   - %3s\n" "${proc_size[$(expr $tmp_swp_cur_row + 3)]}" "${proc_time[$(expr $tmp_swp_cur_row + 3)]}" "${proc_id[$(expr $tmp_swp_cur_row + 3)]}"
+			# tmp_swp_cur_len=0
+			# ((tmp_swp_cur_row++))
+		# fi
+	# done
+	# header 1
 }
 
 function procSort() {
 	local -n tmp_proc_id=$1
-	local -n tmp_proc_size=$2
-	local -n tmp_proc_time=$3
-	local tmp_tmp_proc_id=("${tmp_proc_id[@]}")
-	local tmp_tmp_proc_size=("${tmp_proc_size[@]}")
-	local tmp_tmp_proc_time=("${tmp_proc_time[@]}")
+	local -n tmp_proc_tamano=$2
+	local -n tmp_proc_tiempo=$3
+	local tmp_proc_id_copia=("${tmp_proc_id[@]}")
+	local tmp_proc_tamano_copia=("${tmp_proc_tamano[@]}")
+	local tmp_proc_tiempo_copia=("${tmp_proc_tiempo[@]}")
 	local tmp_proc_count="${#tmp_proc_id[@]}"
 	local i=0
 	
-	for el in "${tmp_tmp_proc_id[@]}"; do
+	for el in "${tmp_proc_id_copia[@]}"; do
 		local ii=0
 		local max=0
-		for tm in "${tmp_tmp_proc_time[@]}"; do
+		for tm in "${tmp_proc_tiempo_copia[@]}"; do
 			if [[ $tm -gt $max ]]; then
 				max=$tm
 				max_i=$ii
 			fi
 			((ii++))
 		done
-		#echo "${max} at ${max_i} = ${tmp_tmp_proc_id[$max_i]} -> $(expr $tmp_proc_count - $i - 1)"
-		tmp_proc_id[$(expr $tmp_proc_count - $i - 1)]="${tmp_tmp_proc_id[$max_i]}"
-		tmp_proc_size[$(expr $tmp_proc_count - $i - 1)]="${tmp_tmp_proc_size[$max_i]}"
-		tmp_proc_time[$(expr $tmp_proc_count - $i - 1)]="${tmp_tmp_proc_time[$max_i]}"
-		unset tmp_tmp_proc_id[$max_i]
-		unset tmp_tmp_proc_size[$max_i]
-		unset tmp_tmp_proc_time[$max_i]
-		tmp_tmp_proc_id=( "${tmp_tmp_proc_id[@]}" )
-		tmp_tmp_proc_size=( "${tmp_tmp_proc_size[@]}" )
-		tmp_tmp_proc_time=( "${tmp_tmp_proc_time[@]}" )
+		tmp_proc_id[$(expr $tmp_proc_count - $i - 1)]="${tmp_proc_id_copia[$max_i]}"
+		tmp_proc_tamano[$(expr $tmp_proc_count - $i - 1)]="${tmp_proc_tamano_copia[$max_i]}"
+		tmp_proc_tiempo[$(expr $tmp_proc_count - $i - 1)]="${tmp_proc_tiempo_copia[$max_i]}"
+		unset tmp_proc_id_copia[$max_i]
+		unset tmp_proc_tamano_copia[$max_i]
+		unset tmp_proc_tiempo_copia[$max_i]
+		tmp_proc_id_copia=( "${tmp_proc_id_copia[@]}" )
+		tmp_proc_tamano_copia=( "${tmp_proc_tamano_copia[@]}" )
+		tmp_proc_tiempo_copia=( "${tmp_proc_tiempo_copia[@]}" )
 		((i++))
 	done
 }
@@ -331,14 +351,48 @@ function step() {
 }
 
 function getIndex() {
-	local tmp_value="${1}"
+	local tmp_valor="${1}"
 	shift
 	local tmp_array=("${@}")
 	
 	for i in "${!tmp_array[@]}"; do
-	   if [[ "${tmp_array[$i]}" = "${tmp_value}" ]]; then
+	   if [[ "${tmp_array[$i]}" = "${tmp_valor}" ]]; then
 		   echo "${i}";
 	   fi
+	done
+}
+
+function notacionCientifica() {
+	local i=1000
+	local numero=$1
+	local -n redondeado="$2"
+	local -n abreviacion="$3"
+	while [[ -z $redondeado ]]; do
+		if [[ numero -gt $i ]]; then
+			i=$(expr $i \* 1000)
+		else
+			case "$i" in
+			"1000")
+				abreviacion=
+				;;
+			"1000000")
+				abreviacion="K"
+				;;
+			"1000000000")
+				abreviacion="M"
+				;;
+			"1000000000000")
+				abreviacion="G"
+				;;
+			"1000000000000000")
+				abreviacion="T"
+				;;
+			*)
+				abreviacion="?"
+				;;
+			esac
+			redondeado=$(expr $numero % $i / $(expr $i / 1000))
+		fi
 	done
 }
 
@@ -353,78 +407,15 @@ if [ $# -eq 0 ]; then
 	if [[ $REPLY =~ ^[SsYy]$ ]]; then
 		read -p "Nombre del archivo: " filename
 		leerArchivo
-		pedirDatos 0
-	else
-		pedirDatos 1
 	fi
 else
 	leerArgs "$@"
 fi
 
-swp_proc_status=()
-proc_size=()
-proc_id=()
-proc_time=()
+pedirDatos
 
-mem_size_round=0
-i=1000
-while [[ $mem_size_round -eq 0 ]]; do
-	if [[ $mem_size -gt $i ]]; then
-		i=$(expr $i \* 1000)
-	else
-		case "$i" in
-		"1000")
-			mem_size_abrv=
-			;;
-		"1000000")
-			mem_size_abrv="K"
-			;;
-		"1000000000")
-			mem_size_abrv="M"
-			;;
-		"1000000000000")
-			mem_size_abrv="G"
-			;;
-		"1000000000000000")
-			mem_size_abrv="T"
-			;;
-		*)
-			mem_size_abrv="?"
-			;;
-		esac
-		mem_size_round=$(expr $mem_size % $i / $(expr $i / 1000) )
-	fi
-done
-
-proc_count_round=0
-i=1000
-while [[ $proc_count_round -eq 0 ]]; do
-	if [[ $proc_count -gt $i ]]; then
-		i=$(expr $i \* 1000)
-	else
-		case "$i" in
-		"1000")
-			proc_count_abrv=
-			;;
-		"1000000")
-			proc_count_abrv="K"
-			;;
-		"1000000000")
-			proc_count_abrv="M"
-			;;
-		"1000000000000")
-			proc_count_abrv="G"
-			;;
-		"1000000000000000")
-			proc_count_abrv="T"
-			;;
-		*)
-			proc_count_abrv="?"
-			;;
-		esac
-		proc_count_round=$(expr $proc_count % $i / $(expr $i / 1000) )
-	fi
-done
+notacionCientifica $mem_tamano "mem_tamano_redondeado" "mem_tamano_abreviacion"
+notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
 
 actualizarInterfaz
-while true ; do step ; done
+#while true ; do step ; done
