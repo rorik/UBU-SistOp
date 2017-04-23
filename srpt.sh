@@ -41,29 +41,28 @@ echo "#######################################################################" >
 
 function header() {
 	if [ $1 -eq 0 ]; then
-		clear
-		clear
-		header 1
-		echo -e "\e[38;5;17m#\e[0m           \e[48;5;17mAlgoritmo SRPT, con paginación FIFO de memoria continua\e[0m            \e[38;5;17m#"
-		echo -e "\e[38;5;17m#\e[0m         \e[48;5;17mde particiones fijas e iguales, ajuste primero y reubicable\e[0m          \e[38;5;17m#"
-	elif [ $1 -eq 1 ]; then
 		for i in {17..21} {21..17} ; do echo -en "\e[38;5;${i}m########" ; done ; echo -e "\e[0m"
-	else
+	elif [ $1 -eq 1 ]; then
+		clear
+		clear
 		header 0
-		printf "\e[38;5;17m#\e[0m        \e[48;5;17mBloques Utilizables de Memoria: "
+		echo -e "\e[38;5;17m#\e[0m\e[48;5;17mSRPT, PAGINACIÓN FIFO, MEMORIA CONT, PARTES FIJAS IGUAL, 1er AJUSTE REUBICABLE\e[0m\e[38;5;17m#"
+	else
+		header 1
+		printf "\e[38;5;17m#\e[0m     \e[48;5;17mTamaño de Memoria: "
 		if [[ -z $mem_tamano_abreviacion ]]; then
-			printf " %3d, " "$mem_tamano_redondeado"
+			printf " %3d" "$mem_tamano_redondeado"
 		else
-			printf "%3d%1s, " "$mem_tamano_redondeado" "$mem_tamano_abreviacion"
+			printf "%3d%1s" "$mem_tamano_redondeado" "$mem_tamano_abreviacion"
 		fi
-		printf "Número de Procesos: "
+		printf "\e[0m     \e[48;5;17mTiempo: %3d\e[0m     \e[48;5;17mNúmero de Procesos: " "$tiempo"
 		if [[ -z $proc_count_abreviacion ]]; then
 			printf " %3d" "$proc_count_redondeado"
 		else
 			printf "%3d%1s" "$proc_count_round" "$proc_count_abreviacion"
 		fi
-		printf "\e[0m        \e[38;5;17m#\n"
-		header 1
+		printf "\e[0m     \e[38;5;17m#\n"
+		header 0
 	fi
 }
 
@@ -124,8 +123,7 @@ function leerArgs() {
 		  else
 			echo "ERROR: '--filename' requiere un argumento no vacio."
 			exit 1
-		  fi
-			;;
+		  fi;;
 		-m|--memoria)
 		  if [ -n "$2" ]; then
 			local tmp_mem_tamano="$2"
@@ -134,8 +132,7 @@ function leerArgs() {
 		  else
 			echo "ERROR: '--memoria' requiere un argumento no vacio."
 			exit 1
-		  fi
-			;;
+		  fi;;
 		-p|--procesos)
 		  if [ -n "$2" ]; then
 			proc_count="$2"
@@ -144,15 +141,12 @@ function leerArgs() {
 		  else
 			echo "ERROR: '--procesos' requiere un argumento no vacio."
 			exit 1
-		  fi
-			;;
+		  fi;;
 		--)
 		  shift
-		  break
-		  ;;
+		  break;;
 		-?*)
-		  echo "WARN: OPCIÓN DESCONOCIDA: $1"
-		  ;;
+		  echo "WARN: OPCIÓN DESCONOCIDA: $1";;
 		*)
 		  break
 	  esac
@@ -175,6 +169,7 @@ function leerArchivo() {
 			proc_paginas[$i]=$(echo $line | cut -d ';' -f2)
 			proc_tiempo_llegada[$i]=$(echo $line | cut -d';' -f3)
 			proc_id[$i]=$(echo $line | cut -d';' -f4)
+			if [[ -z "${proc_id[$i]}" ]]; then proc_id[$i]="P${i}"; fi
 			proc_tiempo_ejecucion[$i]=0
 			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
 			((i++))
@@ -182,15 +177,12 @@ function leerArchivo() {
 			if [[ $line =~ ^[+] ]]; then
 				case $(echo $line | tr -d '+' | cut -d ':' -f1) in
 					"MEMORIA")
-						mem_tamano=$(echo $line | cut -d ':' -f2)
-						;;
+						mem_tamano=$(echo $line | cut -d ':' -f2);;
 					"SISTEMA")
-						mem_sistema=$(echo $line | cut -d ':' -f2)
-						;;
+						mem_sistema=$(echo $line | cut -d ':' -f2);;
 					*)
 						echo "CONFIGURACIÓN EN FICHERO NO VÁLIDA"
-						exit 1
-						;;
+						exit 1;;
 				esac
 			fi
 		fi
@@ -201,13 +193,14 @@ function leerArchivo() {
 }
 
 function actualizarInterfaz(){
-	mem_used=0
-	for proc in "${proc_size[@]}"; do
-		mem_used=$(expr $mem_used + $proc)
-	done
-	mem_used_round=$(expr $mem_used \* 200  / $mem_tamano)
+	# mem_used=0
+	# for proc in "${proc_size[@]}"; do
+		# mem_used=$(expr $mem_used + $proc)
+	# done
+	# mem_used_round=$(expr $mem_used \* 200  / $mem_tamano)
 	
 	header 2
+	
 	
 	# echo -ne "\e[38;5;17m#" ; for i in {1..50}; do
 		# if [ "$mem_used_round" -ge "$i" ]; then echo -ne "\e[91m\u2593"; else echo -ne "\e[92m\u2593"; fi
@@ -264,7 +257,7 @@ function actualizarInterfaz(){
 			# ((tmp_swp_cur_row++))
 		# fi
 	# done
-	# header 1
+	# header 0
 }
 
 function procSort() {
@@ -301,53 +294,60 @@ function procSort() {
 }
 
 function step() {
-	echo -e "\e[38;5;17m#\e[0m 1.- Introducir proceso en memoria"
-	echo -e "\e[38;5;17m#\e[0m 2.- Sacar proceso de memoria"
-	echo -e "\e[38;5;17m#\e[0m 3.- Ejecución"
-	echo -e "\e[38;5;17m#\e[0m 4.- SRPT sort"
-	echo -e "\e[38;5;17m#\e[0m 5.- Finalizar"
-	header 1
-	
-	until [[ $REPLY =~ ^[1-5] ]]; do
-		read -p  "Opción: " -n 1 -r; printf "\r         \r"
-	done
-	
-	if [[ $REPLY -eq 1 ]]; then
-		echo; echo -en "Añadir Proceso\e[1A\r"
-		read -p "ID del proceso: " id
-		tmp_index=$(getIndex "$id" "${swp_proc_id[@]}")
-		if [[ ! -z $tmp_index ]]; then 
-			tmp_mem_index=$(getIndex "$id" "${proc_id[@]}")
-			if [[ -z $tmp_mem_index ]]; then 
-				proc_id+=("$id")
-				proc_size+=("${swp_proc_size[$tmp_index]}")
-				proc_time+=("${swp_proc_time[$tmp_index]}")
-				swp_proc_status[$tmp_index]=1
-			fi
-		fi
-	elif [[ $REPLY -eq 2 ]]; then
-		echo; echo -en "Sacar Proceso\e[1A\r"
-		read -p "ID del proceso: " id
-		tmp_mem_index=$(getIndex "$id" "${proc_id[@]}")
-		if [[ ! -z $tmp_mem_index ]]; then 
-			unset proc_id[$tmp_mem_index]
-			unset proc_size[$tmp_mem_index]
-			unset proc_time[$tmp_mem_index]
-			unset swp_proc_status[$(getIndex "$id" "${swp_proc_id[@]}")]
-			proc_id=( "${proc_id[@]}" )
-			proc_size=( "${proc_size[@]}" )
-			proc_time=( "${proc_time[@]}" )
-		fi
-	elif [[ $REPLY -eq 3 ]]; then
-		echo
-	elif [[ $REPLY -eq 4 ]]; then
-		procSort proc_id proc_size proc_time
-	elif [[ $REPLY -eq 5 ]]; then
-		exit 1
-	fi
-	
-	REPLY=
+	echo "${#swp_proc_id[@]} - ${#mem_proc_id[@]}"
+	read -p "Presiona cualquier tecla para continuar " -n 1 -r
+	popularSwap $tiempo
+	popularMemoria
+	tiempo=$(expr $tiempo + 1)
 	actualizarInterfaz
+
+	# echo -e "\e[38;5;17m#\e[0m 1.- Introducir proceso en memoria"
+	# echo -e "\e[38;5;17m#\e[0m 2.- Sacar proceso de memoria"
+	# echo -e "\e[38;5;17m#\e[0m 3.- Ejecución"
+	# echo -e "\e[38;5;17m#\e[0m 4.- SRPT sort"
+	# echo -e "\e[38;5;17m#\e[0m 5.- Finalizar"
+	# header 1
+	
+	# until [[ $REPLY =~ ^[1-5] ]]; do
+		# read -p  "Opción: " -n 1 -r; printf "\r         \r"
+	# done
+	
+	# if [[ $REPLY -eq 1 ]]; then
+		# echo; echo -en "Añadir Proceso\e[1A\r"
+		# read -p "ID del proceso: " id
+		# tmp_index=$(getIndex "$id" "${swp_proc_id[@]}")
+		# if [[ ! -z $tmp_index ]]; then 
+			# tmp_mem_index=$(getIndex "$id" "${proc_id[@]}")
+			# if [[ -z $tmp_mem_index ]]; then 
+				# proc_id+=("$id")
+				# proc_size+=("${swp_proc_size[$tmp_index]}")
+				# proc_time+=("${swp_proc_time[$tmp_index]}")
+				# swp_proc_status[$tmp_index]=1
+			# fi
+		# fi
+	# elif [[ $REPLY -eq 2 ]]; then
+		# echo; echo -en "Sacar Proceso\e[1A\r"
+		# read -p "ID del proceso: " id
+		# tmp_mem_index=$(getIndex "$id" "${proc_id[@]}")
+		# if [[ ! -z $tmp_mem_index ]]; then 
+			# unset proc_id[$tmp_mem_index]
+			# unset proc_size[$tmp_mem_index]
+			# unset proc_time[$tmp_mem_index]
+			# unset swp_proc_status[$(getIndex "$id" "${swp_proc_id[@]}")]
+			# proc_id=( "${proc_id[@]}" )
+			# proc_size=( "${proc_size[@]}" )
+			# proc_time=( "${proc_time[@]}" )
+		# fi
+	# elif [[ $REPLY -eq 3 ]]; then
+		# echo
+	# elif [[ $REPLY -eq 4 ]]; then
+		# procSort proc_id proc_size proc_time
+	# elif [[ $REPLY -eq 5 ]]; then
+		# exit 1
+	# fi
+	
+	# REPLY=
+	# actualizarInterfaz
 }
 
 function getIndex() {
@@ -373,34 +373,77 @@ function notacionCientifica() {
 		else
 			case "$i" in
 			"1000")
-				abreviacion=
-				;;
+				abreviacion=;;
 			"1000000")
-				abreviacion="K"
-				;;
+				abreviacion="K";;
 			"1000000000")
-				abreviacion="M"
-				;;
+				abreviacion="M";;
 			"1000000000000")
-				abreviacion="G"
-				;;
+				abreviacion="G";;
 			"1000000000000000")
-				abreviacion="T"
-				;;
+				abreviacion="T";;
 			*)
-				abreviacion="?"
-				;;
+				abreviacion="?";;
 			esac
 			redondeado=$(expr $numero % $i / $(expr $i / 1000))
 		fi
 	done
 }
 
+function popularSwap() {
+	local tiempo=$1
+	local i=0
+	for (( i=0 ; i<"${#proc_id[@]}"; i++ )); do
+		if [[ "${proc_tiempo_llegada[$i]}" -eq $tiempo ]]; then
+			swp_proc_id+=("${proc_id[$i]}")
+			swp_proc_index+=("$i")
+		fi
+	done
+}
+
+function popularMemoria() {
+	if [[ ! -z swp_proc_id ]]; then
+		until [[ "${proc_tamano[${swp_proc_index[0]}]}" -gt $(expr $mem_tamano - $mem_usada) ]] || [[ "${#swp_proc_id[@]}" -eq 0 ]]; do
+			mem_proc_id+=("$swp_proc_id[0]")
+			mem_usada=$(expr $mem_usada + ${proc_tamano[${swp_proc_index[0]}]} )
+			for ((i=0 ; i<=$(expr 500 - ${proc_tamano[${swp_proc_index[0]}]} ) ; i++ )); do
+				local espacio_valido=1
+				for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do
+					if [[ -z "${mem_paginas[$(expr $i + $j)]}" ]]; then
+						#echo "+ $(expr $i + $j)"
+						espacio_valido=$(expr $espacio_valido \* 1)
+					else
+						#echo "- $(expr $i + $j)"
+						i=$(expr $i + $j)
+						espacio_valido=0
+						break
+					fi
+				done
+				if [[ $espacio_valido -eq 1 ]]; then
+					for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do
+						mem_paginas[$(expr $i + $j)]="${swp_proc_id[0]}"
+					done
+					break
+				fi
+			done
+			unset swp_proc_id[0]
+			unset swp_proc_index[0]
+			swp_proc_id=( "${swp_proc_id[@]}" )
+			swp_proc_index=( "${swp_proc_index[@]}" )
+		done
+	fi
+}
+
 #_____________________________________________
 # FINAL DE FUNCIONES
+#
+# COMIENZO DE PROGRAMA PRINCIPAL
 #_____________________________________________
 
-header 0 ; header 1
+declare -a mem_paginas=()
+declare -i mem_usada=0
+
+header 1 ; header 0
 
 if [ $# -eq 0 ]; then
 	read -p "Introducción de datos por archivo (s/n): " -n 1 -r ; echo
@@ -418,4 +461,5 @@ notacionCientifica $mem_tamano "mem_tamano_redondeado" "mem_tamano_abreviacion"
 notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
 
 actualizarInterfaz
-#while true ; do step ; done
+
+while true ; do step ; done
