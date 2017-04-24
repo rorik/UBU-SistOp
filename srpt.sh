@@ -52,14 +52,14 @@ function pedirDatos() {
 
 	if [ -z "$proc_id" ]; then
 		for i in $(seq 0 $(expr $proc_count - 1 )); do
-			until [[ "${proc_tamano[$i]}" =~ ^[0-9]+$ ]] && [[ ! "${proc_tamano[$i]}" -eq 0 ]]; do
+			until [[ ${proc_tamano[$i]} =~ ^[0-9]+$ ]] && [[ ! ${proc_tamano[$i]} -eq 0 ]]; do
 				printf "\e[1A%80s\r" " "
 				read -p "[P${i}] Bloques en memoria: " proc_tamano[$i]
 				printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 			done
 			printf "%80s\n" " "
 
-			until [[ "${proc_tiempo_llegada[$i]}" =~ ^[0-9]+$ ]]; do
+			until [[ ${proc_tiempo_llegada[$i]} =~ ^[0-9]+$ ]]; do
 				printf "\e[1A%80s\r" " "
 				read -p "[P${i}] Tiempo de llegada: " proc_tiempo_llegada[$i]
 				printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
@@ -73,8 +73,11 @@ function pedirDatos() {
 			proc_id[$i]="P${i}"
 			proc_tiempo_ejecucion[$i]=0
 			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
+			log 3 "    Proceso ${i}, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 		done
 	fi
+
+	tiempo_final="$(ultimoTiempo)"
 }
 
 function leerArgs() {
@@ -87,6 +90,7 @@ function leerArgs() {
 			-f|--filename)
 			  if [ -n "$2" ]; then
 					filename="$2"
+					log 5 "  Argumento de archivo introducido <${filename}>"
 					shift 2
 					continue
 			  else
@@ -97,6 +101,7 @@ function leerArgs() {
 			-m|--memoria)
 			  if [ -n "$2" ]; then
 					local tmp_mem_tamano="$2"
+					log 5 "  Argumento de memoria introducido <${tmp_mem_tamano}>"
 					shift 2
 					continue
 			  else
@@ -107,6 +112,7 @@ function leerArgs() {
 			-p|--procesos)
 			  if [ -n "$2" ]; then
 					proc_count="$2"
+					log 5 "  Argumento de procesos introducido <${proc_count}>"
 					shift 2
 					continue
 			  else
@@ -117,7 +123,7 @@ function leerArgs() {
 			-l|--log)
 			  if [ -n "$2" ]; then
 					nivel_log="$2"
-				  log 3 "  Establecido nivel de log a $2"
+				  log 5 "  Establecido nivel de log a $nivel_log"
 					shift 2
 					continue
 			  else
@@ -132,41 +138,68 @@ function leerArgs() {
 	  esac
 	  shift
 	done
-	if [ ! -z "$filename" ]; then leerArchivo; fi
-	if [ ! -z "$tmp_mem_tamano" ]; then mem_tamano=$tmp_mem_tamano; fi
+	if [ ! -z "$filename" ]; then
+		log 3 "  Leyendo archivo:"
+		leerArchivo
+		log 0 "  Fin Lectura archivo"
+	fi
+	if [ ! -z "$tmp_mem_tamano" ]; then
+		mem_tamano=$tmp_mem_tamano
+		log 3 "  Tamaño de memoria asignado a $mem_tamano"
+	fi
 }
 
 function leerArchivo() {
 	if [ ! -f $filename ]; then
+		log 9 'Archivo no existente'
 		echo "Archivo \"${filename}\" no válido."
 		finalizarEjecucion 30
 	fi
-	i=0
-	IFS=$'\n'; set -f; for line in $(<$filename); do
+
+	local i=0
+	IFS=$'\n'; set -f
+	for line in $(<$filename); do
 		line=$(echo $line | tr -d ' ' | tr -d '\r')
-		if [[ ! $line =~ ^[#+] ]] && [[ ! -z $(echo $line) ]]; then
+		log 0 "    Linea leida <${line}>"
+		if [[ ! $line =~ ^[\#+] ]] && [[ ! -z $line ]]; then
+			log 0 "    Es proceso:"
 			proc_tamano[$i]=$(echo $line | cut -d ';' -f1)
+			log 0 "      Tamaño <${proc_tamano[$i]}>"
 			proc_paginas[$i]=$(echo $line | cut -d ';' -f2)
+			log 0 "      Secuecia <${proc_paginas[$i]}>"
 			proc_tiempo_llegada[$i]=$(echo $line | cut -d';' -f3)
+			log 0 "      Llegada <${proc_tiempo_llegada[$i]}>"
 			proc_id[$i]=$(echo $line | cut -d';' -f4)
-			if [[ -z "${proc_id[$i]}" ]]; then proc_id[$i]="P${i}"; fi
+			log 0 "      ID <${proc_id[$i]}>"
+			if [[ -z ${proc_id[$i]} ]]; then
+				proc_id[$i]="P${i}"
+				log 0 "      Nueva ID <${proc_id[$i]}>"
+			fi
 			proc_tiempo_ejecucion[$i]=0
 			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
+			log 3 "    Proceso ${i}, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 			((i++))
 		else
+			log 0 "    Es comando:"
 			if [[ $line =~ ^[+] ]]; then
+				log 0 "      Es opción:"
 				case $(echo $line | tr -d '+' | cut -d ':' -f1) in
 					"MEMORIA")
-						mem_tamano=$(echo $line | cut -d ':' -f2);;
+						mem_tamano=$(echo $line | cut -d ':' -f2)
+						log 0 "        de memoria <${mem_tamano}>"
+						log 3 "    Configuración, bloques de memoria <${mem_tamano}> ";;
 					"SISTEMA")
-						mem_sistema=$(echo $line | cut -d ':' -f2);;
+						mem_sistema=$(echo $line | cut -d ':' -f2)
+						log 0 "        de sistema <${mem_sistema}>"
+						log 3 "    Configuración, bloques del sistema <${mem_sistema}> ";;
 					*)
-						echo "CONFIGURACIÓN EN FICHERO NO VÁLIDA"
+						echo 'CONFIGURACIÓN EN FICHERO NO VÁLIDA'
 						finalizarEjecucion 31;;
 				esac
-			fi
+			else log 0 "      Es comentario"; fi
 		fi
-	done; set +f; unset IFS
+	done
+	set +f; unset IFS
 	if [ ! $i -eq 0 ]; then
 		proc_count=$i
 	fi
@@ -218,24 +251,21 @@ function step() {
 	if [[ $tiempo -le $tiempo_final ]]; then popularSwap $tiempo; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then
 		popularMemoria
-		if [[ ! ${#mem_proc_id[@]} -eq 0 ]]; then ejecucion; fi
-	else
-		if [[ ! ${#mem_proc_id[@]} -eq 0 ]]; then ejecucion; else finalizarEjecucion 0; fi
-	fi
+	elif [[ ${#mem_proc_id[@]} -eq 0 ]]; then finalizarEjecucion 0; fi
+	ejecucion
 	tiempo=$(expr $tiempo + 1)
   actualizarInterfaz
 	echo "mem_usada: ${#mem_paginas[@]}"
 	printf "%s " "${mem_paginas[@]}"
+	echo
 }
 
 function stepSilencio() {
 	if [[ $tiempo -le $tiempo_final ]]; then popularSwap $tiempo; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then
 		popularMemoria
-		if [[ ! ${#mem_proc_id[@]} -eq 0 ]]; then ejecucion; fi
-	else
-		if [[ ! ${#mem_proc_id[@]} -eq 0 ]]; then ejecucion; else finalizarEjecucion 0; fi
-	fi
+	elif [[ ${#mem_proc_id[@]} -eq 0 ]]; then finalizarEjecucion 0; fi
+	ejecucion
 	tiempo=$(expr $tiempo + 1)
 }
 
@@ -335,11 +365,7 @@ function eliminarMemoria() {
 	for (( i=0 ; ii<$mix ; i++ )); do
 		if [[ ! -z ${mem_paginas[$i]} ]]; then
 			((ii++))
-			if [[ ${mem_proc_id[$index_mem_objetivo]} = ${mem_paginas[$i]} ]]; then
-				unset mem_paginas[$i]
-			else
-				echo "NOPE ${mem_proc_id[$index_mem_objetivo]} != $pagina @ $i -> (${mem_paginas[$(expr $i - 1)]}) ${mem_paginas[$i]} (${mem_paginas[$(expr $i + 1)]})"
-			fi
+			if [[ ${mem_proc_id[$index_mem_objetivo]} = ${mem_paginas[$i]} ]]; then unset mem_paginas[$i]; fi
 		fi
 	done
 	i=0
@@ -376,18 +402,6 @@ function ejecucion() {
 	fi
 }
 
-function log() {
-	local nivel=$1
-	local mensaje=$2
-	if [[ $nivel -ge $nivel_log ]]; then
-		if [[ ! -z $mensaje ]]; then
-			echo "[${nivel}] > ${mensaje}" >> out.txt
-		else
-			echo >> out.txt
-		fi
-	fi
-}
-
 function ultimoTiempo() {
 	local tiempo_max=0
 	for tiempo in "${proc_tiempo_llegada[@]}"; do
@@ -406,6 +420,61 @@ function finalizarEjecucion() {
 	exit $error
 }
 
+function log() {
+	local nivel=$1
+	local mensaje=$2
+	if [[ $nivel -ge $nivel_log ]]; then
+		if [[ ! -z $mensaje ]]; then
+			echo "[${nivel}] > ${mensaje}" >> out.txt
+		else
+			echo >> out.txt
+		fi
+	fi
+}
+
+function cabeceraLog() {
+	log 1 'LICENCIA DE USO:'
+	log 1 '##########################################################################'
+	log 1 '#                                                                        #'
+	log 1 '#                              MIT License                               #'
+	log 1 '#             Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz            #'
+	log 1 '#         ――――――――――――――――――――――――――――――――――――――――――――――――――――――         #'
+	log 1 '#      You may:                                                          #'
+	log 1 '#        - Use the work commercially                                     #'
+	log 1 '#        - Make changes to the work                                      #'
+	log 1 '#        - Distribute the compiled code and/or source.                   #'
+	log 1 '#        - Incorporate the work into something that                      #'
+	log 1 '#          has a more restrictive license.                               #'
+	log 1 '#        - Use the work for private use                                  #'
+	log 1 '#                                                                        #'
+	log 1 '#      You must:                                                         #'
+	log 1 '#        - Include the copyright notice in all                           #'
+	log 1 '#          copies or substantial uses of the work                        #'
+	log 1 '#        - Include the license notice in all copies                      #'
+	log 1 '#          or substantial uses of the work                               #'
+	log 1 '#                                                                        #'
+	log 1 '#      You cannot:                                                       #'
+	log 1 '#        - Hold the author liable. The work is                           #'
+	log 1 '#          provided "as is".                                             #'
+	log 1 '#                                                                        #'
+	log 1 '##########################################################################'
+	log 1
+	log 1 'CABECERA DEL PROGRAMA:'
+	log 3 '##########################################################################'
+	log 3 '#                                                                        #'
+	log 3 '#                SRPT, Paginación, FIFO, Memoria Continua,               #'
+	log 3 '#               Fijas e iguales, Primer ajuste y Reubicable              #'
+	log 3 '#         ――――――――――――――――――――――――――――――――――――――――――――――――――――――         #'
+	log 3 '#        Alumnos:                                                        #'
+	log 3 '#          - Gonzalez Roman, Diego                                       #'
+	log 3 '#          - Díaz García, Rodrigo                                        #'
+	log 3 '#        Sistemas Operativos, Universidad de Burgos                      #'
+	log 3 '#        Grado en ingeniería informática (2016-2017)                     #'
+	log 3 '#                                                                        #'
+	log 3 '##########################################################################'
+	log 3
+}
+
 #_____________________________________________
 # FINAL DE FUNCIONES
 #
@@ -413,48 +482,16 @@ function finalizarEjecucion() {
 #_____________________________________________
 
 nivel_log=3
+
 log 9 "EJECUCIÓN DE ${0} EN $(hostname) CON FECHA $(date)"
 log 9
-log 1 'LICENCIA DE USO:'
-log 1 '##########################################################################'
-log 1 '#                                                                        #'
-log 1 '#                              MIT License                               #'
-log 1 '#             Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz            #'
-log 1 '#         ――――――――――――――――――――――――――――――――――――――――――――――――――――――         #'
-log 1 '#      You may:                                                          #'
-log 1 '#        - Use the work commercially                                     #'
-log 1 '#        - Make changes to the work                                      #'
-log 1 '#        - Distribute the compiled code and/or source.                   #'
-log 1 '#        - Incorporate the work into something that                      #'
-log 1 '#          has a more restrictive license.                               #'
-log 1 '#        - Use the work for private use                                  #'
-log 1 '#                                                                        #'
-log 1 '#      You must:                                                         #'
-log 1 '#        - Include the copyright notice in all                           #'
-log 1 '#          copies or substantial uses of the work                        #'
-log 1 '#        - Include the license notice in all copies                      #'
-log 1 '#          or substantial uses of the work                               #'
-log 1 '#                                                                        #'
-log 1 '#      You cannot:                                                       #'
-log 1 '#        - Hold the author liable. The work is                           #'
-log 1 '#          provided "as is".                                             #'
-log 1 '#                                                                        #'
-log 1 '##########################################################################'
-log 1
-log 1 'CABECERA DEL PROGRAMA:'
-log 3 '##########################################################################'
-log 3 '#                                                                        #'
-log 3 '#                SRPT, Paginación, FIFO, Memoria Continua,               #'
-log 3 '#               Fijas e iguales, Primer ajuste y Reubicable              #'
-log 3 '#         ――――――――――――――――――――――――――――――――――――――――――――――――――――――         #'
-log 3 '#        Alumnos:                                                        #'
-log 3 '#          - Gonzalez Roman, Diego                                       #'
-log 3 '#          - Díaz García, Rodrigo                                        #'
-log 3 '#        Sistemas Operativos, Universidad de Burgos                      #'
-log 3 '#        Grado en ingeniería informática (2016-2017)                     #'
-log 3 '#                                                                        #'
-log 3 '##########################################################################'
-log 3
+
+if [ ! $# -eq 0 ]; then
+	log 5 'Argumentos introducidos, obteniendo información:'
+	leerArgs "$@"
+fi
+
+cabeceraLog
 
 declare -a mem_paginas=()
 declare -i mem_usada=0
@@ -469,20 +506,13 @@ if [ $# -eq 0 ]; then
 		log 5 "  Por archivo (${filename})"
 		leerArchivo
 	else log 5 '  Por teclado';	fi
-else
-	log 5 'Argumentos introducidos, obteniendo información:'
-	leerArgs "$@"
-	if [[ -z $modo_silencio ]]; then header 1 ; header 0; fi
-fi
+elif [[ -z $modo_silencio ]]; then header 1 ; header 0; fi
 
 pedirDatos
 
-tiempo_final="$(ultimoTiempo)"
-
-notacionCientifica $mem_tamano "mem_tamano_redondeado" "mem_tamano_abreviacion"
-notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
-
 if [[ -z $modo_silencio ]]; then
+	notacionCientifica $mem_tamano "mem_tamano_redondeado" "mem_tamano_abreviacion"
+	notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
 	actualizarInterfaz
 	while true ; do step ; done
 else
