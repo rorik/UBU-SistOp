@@ -32,11 +32,11 @@ function header() {
 }
 
 function pedirDatos() {
-	if [ -z "$mem_tamano" ]; then
-		until [[ $mem_tamano =~ ^[0-9]+$ ]] && [[ ! $mem_tamano -eq 0 ]]; do
-			printf "\e[1A%80s\r" " "
-			read -p "Tamaño (en bloques) de la memoria: " mem_tamano
-			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
+	if [ -z "$mem_tamano" ]; then #si el tamaño de memoria nulo
+		until [[ $mem_tamano =~ ^[0-9]+$ ]] && [[ ! $mem_tamano -eq 0 ]]; do #hasta el tamaño de memoria empiece entre 0 y 9 Y sea diferente a 0 hacer...
+			printf "\e[1A%80s\r" " " #imprimir 80 espacios en color 1A
+			read -p "Tamaño (en bloques) de la memoria: " mem_tamano #te pide que escribas algo y eso eso va a ser el tamaño de memoria
+			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r" #te muestra en pantalla el texto y vuelve a la linea anterior
 		done
 		printf "%80s\n" " "
 	fi
@@ -70,9 +70,9 @@ function pedirDatos() {
 			read -p "[P${i}] Secuencia de páginas: " proc_paginas[$i]
 			echo
 
-			proc_id[$i]="P${i}"
+			proc_id[$i]="P${i}" #Si no tiene la id asignada le da una
 			proc_tiempo_ejecucion[$i]=0
-			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
+			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #Asigna el tiempo rastante al numero de paginas
 			log 3 "    Proceso ${i}, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 		done
 	fi
@@ -81,9 +81,9 @@ function pedirDatos() {
 }
 
 function leerArgs() {
-	while [ "$1" != "" ]; do
+	while [ "$1" != "" ]; do #mientras el parametro 1 no sea un espacio hacer
 		case $1 in
-			-s|--silencio)
+			-s|--silencio) #si el parametro es s o silencio
 				modo_silencio=1
 				log 9 '  Salida gráfica deshabilitada'
 			;;
@@ -157,26 +157,26 @@ function leerArchivo() {
 	fi
 
 	local i=0
-	IFS=$'\n'; set -f
+	IFS=$'\n'; set -f #Establece el valor de separacion como final de linea
 	for line in $(<$filename); do
-		line=$(echo $line | tr -d ' ' | tr -d '\r')
+		line=$(echo $line | tr -d ' ' | tr -d '\r') #elimina los espacios (-d) y tr sustituye
 		log 0 "    Linea leida <${line}>"
-		if [[ ! $line =~ ^[\#+] ]] && [[ ! -z $line ]]; then
+		if [[ ! $line =~ ^[\#+] ]] && [[ ! -z $line ]]; then #si la linea no empieza por # y + o no es nula entonces...
 			log 0 "    Es proceso:"
-			proc_tamano[$i]=$(echo $line | cut -d ';' -f1)
+			proc_tamano[$i]=$(echo $line | cut -d ';' -f1) #guarda el tamaño, porque va cortando todolo separado por ; y coge la 1ª columna(-f1)
 			log 0 "      Tamaño <${proc_tamano[$i]}>"
-			proc_paginas[$i]=$(echo $line | cut -d ';' -f2)
+			proc_paginas[$i]=$(echo $line | cut -d ';' -f2) #guarda las paginas
 			log 0 "      Secuecia <${proc_paginas[$i]}>"
-			proc_tiempo_llegada[$i]=$(echo $line | cut -d';' -f3)
+			proc_tiempo_llegada[$i]=$(echo $line | cut -d';' -f3) #guarda el tiempo de llegada
 			log 0 "      Llegada <${proc_tiempo_llegada[$i]}>"
-			proc_id[$i]=$(echo $line | cut -d';' -f4)
+			proc_id[$i]=$(echo $line | cut -d';' -f4) #guarda la id
 			log 0 "      ID <${proc_id[$i]}>"
 			if [[ -z ${proc_id[$i]} ]]; then
-				proc_id[$i]="P${i}"
+				proc_id[$i]="P${i}" #si el proceso no tiene id se le asigna uno por defecto
 				log 0 "      Nueva ID <${proc_id[$i]}>"
 			fi
 			proc_tiempo_ejecucion[$i]=0
-			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
+			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #cuenta el numero de paginas y lo asigna al tiempo de ejecucion  restante
 			log 3 "    Proceso ${i}, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 			((i++))
 		else
@@ -285,37 +285,37 @@ function popularSwap() {
 }
 
 function popularMemoria() {
-	mem_usada=${#mem_paginas[@]}
-	if [[ ! -z swp_proc_id ]]; then
-		until [[ "${proc_tamano[${swp_proc_index[0]}]}" -gt $(expr $mem_tamano - $mem_usada) ]] || [[ "${#swp_proc_id[@]}" -eq 0 ]]; do
-			for ((i=0 ; i<=$(expr 500 - ${proc_tamano[${swp_proc_index[0]}]} ) ; i++ )); do
-				local espacio_valido=1
-				for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do
-					if [[ -z "${mem_paginas[$(expr $i + $j)]}" ]]; then
-						espacio_valido=$(expr $espacio_valido \* 1)
+	mem_usada=${#mem_paginas[@]} #memoria usada es igual al numero de paginas
+	if [[ ! -z swp_proc_id ]]; then #si la swap no es nulo lo que pasara a continuacion te sorprendera...
+		until [[ "${proc_tamano[${swp_proc_index[0]}]}" -gt $(expr $mem_tamano - $mem_usada) ]] || [[ "${#swp_proc_id[@]}" -eq 0 ]]; do #mientras el tamaño del primer proceso en el swap sea mayor que la memoria libre o el numero de procesos del swap sea cero hacer...
+			for ((i=0 ; i<=$(expr 500 - ${proc_tamano[${swp_proc_index[0]}]} ) ; i++ )); do #para i=0 hasta mayor que 500 menos el tamaño del primer proceso incrementar
+				local espacio_valido=1 #define variable local espacio valido igual a 1
+				for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do #por cada tamaño del proceso
+					if [[ -z "${mem_paginas[$(expr $i + $j)]}" ]]; then #si la memoria es nula
+						espacio_valido=$(expr $espacio_valido \* 1) #entonces es valido
 					else
-						i=$(expr $i + $j)
+						i=$(expr $i + $j) #sino pasa al siguiente bloque de memoria
 						espacio_valido=0
 						break
 					fi
 				done
-				if [[ $espacio_valido -eq 1 ]]; then
-					mem_proc_id+=("${swp_proc_id[0]}")
-					mem_proc_index+=("${swp_proc_index[0]}")
-					mem_proc_tamano+=("${proc_tamano[${swp_proc_index[0]}]}")
-					mem_usada=$(expr $mem_usada + ${proc_tamano[${swp_proc_index[0]}]} )
-					for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do
-						mem_paginas[$(expr $i + $j)]="${swp_proc_index[0]}"
-						mem_paginas_secuencia[$(expr $i + $j)]="$(echo ${proc_paginas[${swp_proc_index[0]}]} | cut -d ',' -f $((j+1))  )"
-						mem_proc_posicion[${swp_proc_index[0]}]="${mem_proc_posicion[${swp_proc_index[0]}]}$(expr $i + $j) "
+				if [[ $espacio_valido -eq 1 ]]; then #si el espacio es valido entonces
+					mem_proc_id+=("${swp_proc_id[0]}") #guarda la id
+					mem_proc_index+=("${swp_proc_index[0]}") #guarda index
+					mem_proc_tamano+=("${proc_tamano[${swp_proc_index[0]}]}") #guarda tamaño
+					mem_usada=$(expr $mem_usada + ${proc_tamano[${swp_proc_index[0]}]} ) #y actualiza la memoria usada
+					for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do #por cada tamaño del proceso
+						mem_paginas[$(expr $i + $j)]="${swp_proc_index[0]}" #guarda la id de cada proceso de memoria en el espacio correspondiente
+						mem_paginas_secuencia[$(expr $i + $j)]="$(echo ${proc_paginas[${swp_proc_index[0]}]} | cut -d ',' -f $((j+1))  )" #guarda la secuencia de paginas de cada proceso de memoria en el espacio correspondiente
+						mem_proc_posicion[${swp_proc_index[0]}]="${mem_proc_posicion[${swp_proc_index[0]}]}$(expr $i + $j) " #en cada proceso guarda la posicion de sus paginas en memoria
 					done
 					break
 				fi
 			done
-			unset swp_proc_id[0]
-			unset swp_proc_index[0]
-			swp_proc_id=( "${swp_proc_id[@]}" )
-			swp_proc_index=( "${swp_proc_index[@]}" )
+			unset swp_proc_id[0] #saca el proceso del swap
+			unset swp_proc_index[0] #saca el proceso del swap
+			swp_proc_id=( "${swp_proc_id[@]}" ) #desfragmento el swap
+			swp_proc_index=( "${swp_proc_index[@]}" ) #desfragmenta el swap
 		done
 	fi
 }
@@ -375,8 +375,6 @@ function ejecucion() {
 
 function actualizarPaginas() {
 	local index=$1
-	#for pagina in ${mem_paginas[@]}; do
-		#if [[ index ]]
 }
 
 function ultimoTiempo() {
