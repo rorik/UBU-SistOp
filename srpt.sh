@@ -70,9 +70,9 @@ function pedirDatos() {
 			read -p "[P${i}] Secuencia de páginas: " proc_paginas[$i]
 			echo
 
-			proc_id[$i]="P${i}"
+			proc_id[$i]="P${i}" #Si no tiene la id asignada le da una
 			proc_tiempo_ejecucion[$i]=0
-			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
+			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #Asigna el tiempo rastante al numero de paginas
 			log 3 "    Proceso ${i}, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 		done
 	fi
@@ -81,9 +81,9 @@ function pedirDatos() {
 }
 
 function leerArgs() {
-	while [ "$1" != "" ]; do
+	while [ "$1" != "" ]; do #mientras el parametro 1 no sea un espacio hacer
 		case $1 in
-			-s|--silencio)
+			-s|--silencio) #si el parametro es s o silencio
 				modo_silencio=1
 				log 9 '  Salida gráfica deshabilitada'
 			;;
@@ -157,26 +157,26 @@ function leerArchivo() {
 	fi
 
 	local i=0
-	IFS=$'\n'; set -f
+	IFS=$'\n'; set -f #Establece el valor de separacion como final de linea
 	for line in $(<$filename); do
-		line=$(echo $line | tr -d ' ' | tr -d '\r')
+		line=$(echo $line | tr -d ' ' | tr -d '\r') #elimina los espacios (-d) y tr sustituye
 		log 0 "    Linea leida <${line}>"
-		if [[ ! $line =~ ^[\#+] ]] && [[ ! -z $line ]]; then
+		if [[ ! $line =~ ^[\#+] ]] && [[ ! -z $line ]]; then #si la linea no empieza por # y + o no es nula entonces...
 			log 0 "    Es proceso:"
-			proc_tamano[$i]=$(echo $line | cut -d ';' -f1)
+			proc_tamano[$i]=$(echo $line | cut -d ';' -f1) #guarda el tamaño, porque va cortando todolo separado por ; y coge la 1ª columna(-f1)
 			log 0 "      Tamaño <${proc_tamano[$i]}>"
-			proc_paginas[$i]=$(echo $line | cut -d ';' -f2)
+			proc_paginas[$i]=$(echo $line | cut -d ';' -f2) #guarda las paginas
 			log 0 "      Secuecia <${proc_paginas[$i]}>"
-			proc_tiempo_llegada[$i]=$(echo $line | cut -d';' -f3)
+			proc_tiempo_llegada[$i]=$(echo $line | cut -d';' -f3) #guarda el tiempo de llegada
 			log 0 "      Llegada <${proc_tiempo_llegada[$i]}>"
-			proc_id[$i]=$(echo $line | cut -d';' -f4)
+			proc_id[$i]=$(echo $line | cut -d';' -f4) #guarda la id
 			log 0 "      ID <${proc_id[$i]}>"
 			if [[ -z ${proc_id[$i]} ]]; then
-				proc_id[$i]="P${i}"
+				proc_id[$i]="P${i}" #si el proceso no tiene id se le asigna uno por defecto
 				log 0 "      Nueva ID <${proc_id[$i]}>"
 			fi
 			proc_tiempo_ejecucion[$i]=0
-			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w)
+			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #cuenta el numero de paginas y lo asigna al tiempo de ejecucion  restante
 			log 3 "    Proceso ${i}, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 			((i++))
 		else
@@ -290,12 +290,12 @@ function popularMemoria() {
 		until [[ "${proc_tamano[${swp_proc_index[0]}]}" -gt $(expr $mem_tamano - $mem_usada) ]] || [[ "${#swp_proc_id[@]}" -eq 0 ]]; do #mientras el tamaño del primer proceso en el swap sea mayor que la memoria libre o el numero de procesos del swap sea cero hacer...
 			for ((i=0 ; i<=$(expr 500 - ${proc_tamano[${swp_proc_index[0]}]} ) ; i++ )); do #para i=0 hasta mayor que 500 menos el tamaño del primer proceso incrementar
 				local espacio_valido=1 #define variable local espacio valido igual a 1
-				for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do #por cada tamaño del proceso 
+				for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do #por cada tamaño del proceso
 					if [[ -z "${mem_paginas[$(expr $i + $j)]}" ]]; then #si la memoria es nula
 						espacio_valido=$(expr $espacio_valido \* 1) #entonces es valido
 					else
 						i=$(expr $i + $j) #sino pasa al siguiente bloque de memoria
-						espacio_valido=0 
+						espacio_valido=0
 						break
 					fi
 				done
@@ -320,8 +320,8 @@ function popularMemoria() {
 	fi
 }
 
-function eliminarMemoria() { 
-	local index_objetivo=$1 
+function eliminarMemoria() {
+	local index_objetivo=$1
 	local index_mem_objetivo=$2
 	local i=0
 	local ii=0
@@ -375,8 +375,7 @@ function ejecucion() {
 
 function actualizarPaginas() {
 	local index=$1
-	#for pagina in ${mem_paginas[@]}; do
-		#if [[ index ]]
+	
 }
 
 function ultimoTiempo() {
