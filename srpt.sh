@@ -375,7 +375,6 @@ function ejecucion() {
 
 function actualizarPaginas() {
 	local index=$1
-	
 }
 
 function ultimoTiempo() {
