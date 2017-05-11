@@ -207,29 +207,31 @@ function leerArchivo() {
 
 function actualizarInterfaz() {
 	header 2
-	printf "%8s # %5s - %8s - %5s -  %6s - %3s\n" "  SWP   " " INX " "   ID   " " MEM " "TIEMPO" "POS"
+	printf "%8s #%8s - %5s -  %6s - %8s\n" "  SWP   " "   ID   " " MEM " "TIEMPO" "POS"
 	for i in {0..10}; do
 		if [[ ! -z ${mem_proc_index[$i]} ]]; then
-			printf "%8s #  %3d  - %8s -  %3d  -  %3d    - %s" "${swp_proc_id[$i]:0:8}" "${mem_proc_index[$i]}" "${mem_proc_id[$i]:0:8}" "${mem_proc_tamano[$i]}" "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" "${mem_proc_posicion[${mem_proc_index[$i]}]}"
-		else printf "%9s#%7s-%10s-%7s-%9s-" " " " " " " " " " "; fi
+			printf "%8s #%8s -  %3d  -  %3d    - %s" "${swp_proc_id[$i]:0:8}" "${mem_proc_id[$i]:0:8}" "${mem_proc_tamano[$i]}" "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" "${mem_proc_posicion[${mem_proc_index[$i]}]}"
+		else printf "%8s #%9s-%7s-%9s-" "${swp_proc_id[$i]:0:8}" " " " " " "; fi
 		echo
 	done
-	for i in {0..20}; do
+	printf "================================================================================\n%2s" " "
+	for i in {0..24}; do
 		if [[ -z ${mem_paginas[$i]} ]]; then
-			echo -ne "\e[32m## "
+			echo -ne "\e[32m ##"
 		else
-			printf "\e[31m%2d " "${mem_paginas_secuencia[${i}]}"
+			printf "\e[31m %2d" "${mem_paginas_secuencia[${i}]}"
 		fi
 	done
 	echo -e "\e[39m"
-	echo "mem_usada: ${#mem_paginas[@]}"
+	echo "================================================================================"
+	echo "mem_usada: ${#mem_paginas[@]}/$mem_tamano"
 }
 
 function step() {
 	read -p "Presiona cualquier tecla para continuar " -n 1 -r
-	if [[ $tiempo -le $tiempo_final ]]; then popularSwap $tiempo; fi
+	if [[ $tiempo -le $tiempo_final ]]; then poblarSwap $tiempo; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then
-		popularMemoria
+		poblarMemoria
 	elif [[ ${#mem_proc_id[@]} -eq 0 ]]; then finalizarEjecucion 0; fi
 	ejecucion
 	tiempo=$(expr $tiempo + 1)
@@ -237,9 +239,9 @@ function step() {
 }
 
 function stepSilencio() {
-	if [[ $tiempo -le $tiempo_final ]]; then popularSwap $tiempo; fi
+	if [[ $tiempo -le $tiempo_final ]]; then poblarSwap $tiempo; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then
-		popularMemoria
+		poblarMemoria
 	elif [[ ${#mem_proc_id[@]} -eq 0 ]]; then finalizarEjecucion 0; fi
 	ejecucion
 	tiempo=$(expr $tiempo + 1)
@@ -273,7 +275,7 @@ function notacionCientifica() {
 	done
 }
 
-function popularSwap() {
+function poblarSwap() {
 	local tiempo=$1
 	local i=0
 	for (( i=0 ; i<"${#proc_id[@]}"; i++ )); do
@@ -284,12 +286,13 @@ function popularSwap() {
 	done
 }
 
-function popularMemoria() {
+function poblarMemoria() {
 	mem_usada=${#mem_paginas[@]} #memoria usada es igual al numero de paginas
-	if [[ ! -z swp_proc_id ]]; then #si la swap no es nulo lo que pasara a continuacion te sorprendera...
-		until [[ "${proc_tamano[${swp_proc_index[0]}]}" -gt $(expr $mem_tamano - $mem_usada) ]] || [[ "${#swp_proc_id[@]}" -eq 0 ]]; do #mientras el tamaño del primer proceso en el swap sea mayor que la memoria libre o el numero de procesos del swap sea cero hacer...
-			for ((i=0 ; i<=$(expr 500 - ${proc_tamano[${swp_proc_index[0]}]} ) ; i++ )); do #para i=0 hasta mayor que 500 menos el tamaño del primer proceso incrementar
-				local espacio_valido=1 #define variable local espacio valido igual a 1
+	local espacio_valido=1 #define variable local espacio valido igual a 1
+	if [[ ! -z $swp_proc_id ]]; then #si la swap no es nulo lo que pasara a continuacion te sorprendera...
+		until [[ "${proc_tamano[${swp_proc_index[0]}]}" -gt $(expr $mem_tamano - $mem_usada) ]] || [[ "${#swp_proc_id[@]}" -eq 0 ]] || [[ $espacio_valido -eq 0 ]]; do #mientras el tamaño del primer proceso en el swap sea mayor que la memoria libre o el numero de procesos del swap sea cero hacer...
+			for ((i=0 ; i<=$(expr $mem_tamano - ${proc_tamano[${swp_proc_index[0]}]} ) ; i++ )); do #para i=0 hasta mayor que 500 menos el tamaño del primer proceso incrementar
+				espacio_valido=1 #define variable local espacio valido igual a 1
 				for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do #por cada tamaño del proceso
 					if [[ -z "${mem_paginas[$(expr $i + $j)]}" ]]; then #si la memoria es nula
 						espacio_valido=$(expr $espacio_valido \* 1) #entonces es valido
@@ -309,14 +312,17 @@ function popularMemoria() {
 						mem_paginas_secuencia[$(expr $i + $j)]="$(echo ${proc_paginas[${swp_proc_index[0]}]} | cut -d ',' -f $((j+1))  )" #guarda la secuencia de paginas de cada proceso de memoria en el espacio correspondiente
 						mem_proc_posicion[${swp_proc_index[0]}]="${mem_proc_posicion[${swp_proc_index[0]}]}$(expr $i + $j) " #en cada proceso guarda la posicion de sus paginas en memoria
 					done
+					unset swp_proc_id[0] #saca el proceso del swap
+					unset swp_proc_index[0] #saca el proceso del swap
+					swp_proc_id=( "${swp_proc_id[@]}" ) #desfragmento el swap
+					swp_proc_index=( "${swp_proc_index[@]}" ) #desfragmenta el swap
 					break
 				fi
 			done
-			unset swp_proc_id[0] #saca el proceso del swap
-			unset swp_proc_index[0] #saca el proceso del swap
-			swp_proc_id=( "${swp_proc_id[@]}" ) #desfragmento el swap
-			swp_proc_index=( "${swp_proc_index[@]}" ) #desfragmenta el swap
 		done
+	fi
+	if [[ ! -z $swp_proc_id ]] && [[ "${proc_tamano[${swp_proc_index[0]}]}" -le $(expr $mem_tamano - $mem_usada) ]]; then
+		defragmentarMemoria
 	fi
 }
 
@@ -352,6 +358,38 @@ function eliminarMemoria() {
 	done
 }
 
+function posicionProcesos() {
+	for ((i=0; i<=$mem_tamano; i++)); do
+		if [[ ! -z ${mem_paginas[$i]} ]]; then
+			echo "<<TODO>>"
+		fi
+	done
+}
+
+function defragmentarMemoria() {
+	local pivot=-1
+	local pivot_final=0
+	local count=0
+	for ((i=$mem_tamano ; i>0 ; i-- )); do
+		if [[ -z ${mem_paginas[$i]} ]]; then
+			if [[ $pivot -gt 0 ]]; then ((count++)); fi
+		else
+			if [[ $pivot -lt 0 ]]; then pivot_final=$i; fi
+			pivot=$i
+		fi
+	done
+	for ((i=0 ; j<=$count ; j++ )); do
+		for ((i=0 ; i<=$pivot_final ; i++ )); do
+			if [[ -z ${mem_paginas[$i]} ]] && [[ ! -z ${mem_paginas[$(expr $i + 1)]} ]]; then
+				mem_paginas[$i]=${mem_paginas[$(expr $i + 1)]}
+				mem_paginas_secuencia[$i]=${mem_paginas_secuencia[$(expr $i + 1)]}
+				unset mem_paginas[$(expr $i + 1)]
+				unset mem_paginas_secuencia[$(expr $i + 1)]
+			fi
+		done
+	done
+}
+
 function ejecucion() {
 	local min=${proc_tiempo_ejecucion_restante[${mem_proc_index[0]}]}
 	local min_i=${mem_proc_index[0]}
@@ -367,7 +405,7 @@ function ejecucion() {
 	done
 	((--proc_tiempo_ejecucion_restante[$min_i]))
 	((++proc_tiempo_ejecucion[$min_i]))
-	actualizarPaginas $min_i
+	#actualizarPaginas $min_i
 	if [[ ${proc_tiempo_ejecucion_restante[$min_i]} -eq 0 ]]; then
 		eliminarMemoria $min_i $min_mem_index
 	fi
@@ -375,6 +413,8 @@ function ejecucion() {
 
 function actualizarPaginas() {
 	local index=$1
+	echo "TODO"
+	read -n 1
 }
 
 function ultimoTiempo() {
