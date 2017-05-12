@@ -1,4 +1,5 @@
 +MEMORIA: 25
++PAGINA: 100
 +SISTEMA: 8
 
 # Marcos de Página ; Direcciones Página ; T. Llegada ; (OPCIONAL) ID #
