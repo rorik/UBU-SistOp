@@ -1,0 +1,62 @@
+.\" ARCHIVO DE AYUDA PARA EL MANUAL DE UNIX
+.\" PARA LEER: man ./man_srpt.7
+.\" O INSTALAR: sudo cp ./man_srpt /usr/share/man/man7/srpt.7 && sudo mandb
+.\" Y LEER: man srpt
+.TH man 7 "23 Apr 2017" "1.0" "nuseradd man page"
+.SH NAME
+srpt \- Simulador de paginación y ejecución de procesos.
+.SH SYNOPSIS
+.B bash srpt.sh
+[\fB\-s\fR]
+[\fB\-f\fR \fIfile\fR]
+[\fB\-m\fR \fInbloq\fR]
+[\fB\-p\fR \fInproc\fR]
+[\fB\-l\fR \fIlog\fR]
+.SH DESCRIPTION
+Acepta una serie de datos (a traves de fichero o teclado), donde se detalla los procesos que van a ser utilizados.
+Realiza una representación grafica de la memoria, y va ocupando bloques de esta segun llegen los procesos.
+Con el paso del tiempo los procesos terminan, se liberan y finaliza la ejecución.
+.SH OPTIONS
+.TP
+.BR \-s ", " \-\-silencio "
+Modo silencioso, no realiza ninguna representación gráfica.
+.TP
+.BR \-f ", " \-\-filename "    " \fIfile\fR
+Entrada por fichero, el valor file es interpretado como un archivo, incluir ruta si necesario.
+.TP
+.BR \-m ", " \-\-memoria "    " \fInbloq\fR
+Tamaño en bloques de la memoria según el valor de nbloq. Este valor sobrescribe al dado en el fichero.
+.TP
+.BR \-p ", " \-\-procesos "    " \fInproc\fR
+Número de procesos a pedir, no tiene efecto si es entrada por fichero.
+.TP
+.BR \-l ", " \-\-log "    " \fIlog\fR
+Establece el nivel de salida por fichero (0=debug, 1=extendido, 2=estructural, 3=default, 4=alertas, 5=mínimo, 9=ejecucuión, 10=off).
+.SH ENVIRONMENT
+.TP
+.BR input.txt
+Fichero que contiene los datos a introducir, las configuraciones empiezan por (+), los comentarios por (#) y el resto son procesos (bloques;seq;tiempo(;ID)).
+.SH exit
+Devuelve 0 al terminar la ejecución, en caso de que se produzca un parada fatal, devuelve el código de error:
+.TP
+.BR 30
+Archivo de entrada no encontrado.
+.TP
+.BR 31
+Configuración en archivo no válida.
+.TP
+.BR 40
+Argumento de fichero no válido.
+.TP
+.BR 41
+Argumento de memoria no válido.
+.TP
+.BR 42
+Argumento de procesos no válido.
+.TP
+.BR 43
+Argumento de log no válido.
+.SH BUGS
+No hay bugs, el código es perfecto y no puede ser cuestionado.
+.SH AUTHOR
+Roderick Diaz (about@rorik.me)
