@@ -370,6 +370,7 @@ function poblarMemoria() {
 	fi
 	if [[ ! -z $swp_proc_id ]] && [[ "${proc_tamano[${swp_proc_index[0]}]}" -le $(expr $mem_tamano - $mem_usada) ]]; then
 		defragmentarMemoria
+		poblarMemoria
 	fi
 	if [[ -z $modo_silencio ]]; then
 		unset mem_usada_redondeado
@@ -415,14 +416,6 @@ function eliminarMemoria() {
 	fi
 }
 
-function posicionProcesos() {
-	for ((i=0; i<=$mem_tamano; i++)); do
-		if [[ ! -z ${mem_paginas[$i]} ]]; then
-			echo "<<TODO>>"
-		fi
-	done
-}
-
 function defragmentarMemoria() {
 	local pivot=-1
 	local pivot_final=0
@@ -463,16 +456,28 @@ function ejecucion() {
 	done
 	((--proc_tiempo_ejecucion_restante[$min_i]))
 	((++proc_tiempo_ejecucion[$min_i]))
-	#actualizarPaginas $min_i
 	if [[ ${proc_tiempo_ejecucion_restante[$min_i]} -eq 0 ]]; then
 		eliminarMemoria $min_i $min_mem_index
+	else
+		actualizarPaginas $min_i
 	fi
 }
 
 function actualizarPaginas() {
 	local index=$1
-	echo "TODO"
-	read -n 1
+	local ejecucion=${proc_tiempo_ejecucion[${index}]}
+	local -a paginas=()
+	local fallo=1
+	local -i primera_posicion=-1
+	IFS=',' read -r -a paginas <<< "${proc_paginas[$index]}"
+	local objetivo=${paginas[$ejecucion]}
+	for posicion in ${mem_proc_posicion[$index]}; do
+		if [[ primera_posicion -eq -1 ]]; then primera_posicion=$posicion; fi
+		if [[ ${mem_paginas_secuencia[$posicion]} -eq $objetivo ]]; then fallo=0; fi
+	done
+	if [[ $fallo -eq 1 ]]; then
+		mem_paginas_secuencia[$(expr $ejecucion % ${proc_tamano[$index]} + $primera_posicion)]=$objetivo
+	fi
 }
 
 function ultimoTiempo() {
