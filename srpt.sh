@@ -25,7 +25,7 @@ function header() {
 		else
 			printf "%3d%1s\e[0m" "$mem_tamano_redondeado" "$mem_tamano_abreviacion"
 		fi
-		printf "      \e[48;5;17mTiempo: %3d\e[0m      \e[48;5;17mNúmero de Procesos: " "$tiempo"
+		printf "       \e[48;5;17mTiempo: %3d\e[0m      \e[48;5;17mNúmero de Procesos: " "$tiempo"
 		if [[ -z $proc_count_abreviacion ]]; then
 			printf " %3d" "$proc_count_redondeado"
 		else
@@ -549,6 +549,7 @@ function finalizarEjecucion() {
 	local error=$1
 	log 0 "TIEMPO DE EJECUCIÓN: ${SECONDS}s"
 	if [[ $error -eq 0 ]]; then
+		printf "\nFINAL DE EJECUCIÓN (tiempo: $(expr $tiempo - 1))\n"
 		log 5 "ÚLTIMO TIEMPO: $(expr $tiempo - 1)"
 		log 9 "FINAL DE EJECUCIÓN CON FECHA $(date)"
 	else
