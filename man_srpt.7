@@ -2,7 +2,7 @@
 .\" PARA LEER: man ./man_srpt.7
 .\" O INSTALAR: sudo cp ./man_srpt /usr/share/man/man7/srpt.7 && sudo mandb
 .\" Y LEER: man srpt
-.TH man 7 "23 Apr 2017" "1.0" "nuseradd man page"
+.TH man 7 "14 May 2017" "1.1" "Manual Script SRPT SistOp 2017"
 .SH NAME
 srpt \- Simulador de paginación y ejecución de procesos.
 .SH SYNOPSIS
@@ -21,6 +21,9 @@ Con el paso del tiempo los procesos terminan, se liberan y finaliza la ejecució
 .BR \-s ", " \-\-silencio "
 Modo silencioso, no realiza ninguna representación gráfica.
 .TP
+.BR \-d ", " \-\-debug "
+Modo debug, todos los tiempos son mostrados.
+.TP
 .BR \-f ", " \-\-filename "    " \fIfile\fR
 Entrada por fichero, el valor file es interpretado como un archivo, incluir ruta si necesario.
 .TP
@@ -30,14 +33,26 @@ Tamaño en bloques de la memoria según el valor de nbloq. Este valor sobrescrib
 .BR \-p ", " \-\-procesos "    " \fInproc\fR
 Número de procesos a pedir, no tiene efecto si es entrada por fichero.
 .TP
-.BR \-l ", " \-\-log "    " \fIlog\fR
+.BR \-l ", " \-\-log "    " \fInivel\fR
 Establece el nivel de salida por fichero (0=debug, 1=extendido, 2=estructural, 3=default, 4=alertas, 5=mínimo, 9=ejecucuión, 10=off).
+.TP
+.BR \-b ", " \-\-breakpoint "    " \fItiempo\fR
+Habilita modo debug (y deshabilita modo silencioso) en el tiempo especificado.
+.TP
+.BR \-u ", " \-\-unbreakpoint "    " \fItiempo\fR
+Deshabilita modo debug (y habilita modo silencioso si había sido habilitado) en el tiempo especificado.
 .SH ENVIRONMENT
 .TP
 .BR input.txt
-Fichero que contiene los datos a introducir, las configuraciones empiezan por (+), los comentarios por (#) y el resto son procesos (bloques;seq;tiempo(;ID)).
+Fichero que contiene los datos a introducir, las configuraciones empiezan por (+), los comentarios por (#) y el resto son procesos (marcos;direcciones;tiempo{;ID}).
 .SH exit
 Devuelve 0 al terminar la ejecución, en caso de que se produzca un parada fatal, devuelve el código de error:
+.TP
+.BR 0
+Ejecución correcta.
+.TP
+.BR 20
+Siguiente proceso mayor que memoria.
 .TP
 .BR 30
 Archivo de entrada no encontrado.
@@ -56,7 +71,13 @@ Argumento de procesos no válido.
 .TP
 .BR 43
 Argumento de log no válido.
+.TP
+.BR 44
+Argumento de breakpoint no válido.
+.TP
+.BR 45
+Argumento de unbreakpoint no válido.
 .SH BUGS
 No hay bugs, el código es perfecto y no puede ser cuestionado.
 .SH AUTHOR
-Roderick Diaz (about@rorik.me)
+Roderick Diaz (about@rorik.me) (github.com/rorik)
