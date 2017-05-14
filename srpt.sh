@@ -8,8 +8,7 @@ function header() {
 	if [ $1 -eq 0 ]; then
 		for i in {17..21} {21..17} ; do echo -en "\e[38;5;${i}m########" ; done ; echo -e "\e[0m"
 	elif [ $1 -eq 1 ]; then
-		clear
-		clear
+		clear && clear
 		header 0
 		echo -e "\e[38;5;17m#\e[0m\e[48;5;17mSRPT, PAGINACIÓN FIFO, MEMORIA CONT, PARTES FIJAS IGUAL, 1er AJUSTE REUBICABLE\e[0m\e[38;5;17m#"
 	else
@@ -92,8 +91,11 @@ function leerArgs() {
 		case $1 in
 			-s|--silencio) #si el parametro es s o silencio
 				modo_silencio=1
-				log 9 '  Salida gráfica deshabilitada'
-			;;
+				log 9 '  Salida gráfica deshabilitada';;
+			-d|--debug)
+				modo_debug=1
+				nivel_log=0
+				log 9 '  Entrando modo debug';;
 			-f|--filename)
 			  if [ -n "$2" ]; then
 					filename="$2"
@@ -138,10 +140,32 @@ function leerArgs() {
 					log 9 '!!! El argumento log contiene errores !!!'
 					finalizarEjecucion 43
 			  fi;;
+				-b|--breakpoint)
+					if [ -n "$2" ]; then
+						tiempo_break="$2"
+						log 9 "  Estableciendo breakpoint en <${tiempo_break}>"
+						shift 2
+						continue
+				  else
+						echo 'ERROR: "--breakpoint" requiere un argumento no vacio.'
+						log 9 '!!! El argumento breakpoint contiene errores !!!'
+						finalizarEjecucion 44
+				  fi;;
+				-u|--unbreakpoint)
+					if [ -n "$2" ]; then
+						tiempo_unbreak="$2"
+						log 9 "  Estableciendo unbreakpoint en <${tiempo_unbreak}>"
+						shift 2
+						continue
+				  else
+						echo 'ERROR: "--unbreakpoint" requiere un argumento no vacio.'
+						log 9 '!!! El argumento unbreakpoint contiene errores !!!'
+						finalizarEjecucion 45
+				  fi;;
 			-?*)
-			log 4 "^^^ OPCIÓN \"${1}\" DESCONOCIDA ^^^";;
+				log 4 "^^^ OPCIÓN \"${1}\" DESCONOCIDA ^^^";;
 			*)
-		  break
+		  	break
 	  esac
 	  shift
 	done
@@ -199,7 +223,7 @@ function leerArchivo() {
 					"DIRECCIONES")
 						proc_pagina_tamano=$(echo $line | cut -d ':' -f2)
 						log 0 "        de sistema <${proc_pagina_tamano}>"
-						log 3 "    Configuración, tamaño de pagina <${mem_sistema}> ";;
+						log 3 "    Configuración, tamaño de pagina <${proc_pagina_tamano}> ";;
 					*)
 						echo 'CONFIGURACIÓN EN FICHERO NO VÁLIDA'
 						finalizarEjecucion 31;;
@@ -244,7 +268,7 @@ function actualizarInterfaz() {
 		fi
 		printf " \e[38;5;18m#\e[39m "
 		if [[ ! -z ${mem_proc_index[$i]} ]]; then
-			printf "%10s \e[38;5;18m~\e[39m %5s%4d%6s \e[38;5;18m~\e[39m %-31s" "${mem_proc_id[$i]:0:10}" " " "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" " " "${mem_proc_posicion[${mem_proc_index[$i]}]:0:30}" #pone los datos en la tabla
+			printf "%10s \e[38;5;18m~\e[39m %5s%4d%6s \e[38;5;18m~\e[39m %-31s" "${mem_proc_id[$i]:0:10}" " " "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" " " "${proc_posicion[${mem_proc_index[$i]}]:0:30}" #pone los datos en la tabla
 		else
 			printf "%10s \e[38;5;18m~\e[39m %15s \e[38;5;18m~\e[39m %31s" " " " " " " #si esta vacio solo pone el swap
 		fi
@@ -264,31 +288,47 @@ function actualizarInterfaz() {
 }
 
 function step() {
-	if [[ $tiempo -le $tiempo_final ]]; then
-		poblarSwap $tiempo
-	elif [[ ${#swp_proc_id[@]} -eq 0 ]]; then finalizarEjecucion 0; fi
+	if [[ $tiempo -le $tiempo_final ]]; then poblarSwap $tiempo; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then poblarMemoria; fi
 	if [[ ${#mem_proc_id[@]} -eq 0 ]]; then
+		if [[ ${#swp_proc_id[@]} -eq 0 ]] && [[ $tiempo -gt $tiempo_final ]]; then finalizarEjecucion 0; fi
 		if [[ ${proc_tamano[${swp_proc_index[0]}]} -gt $mem_tamano ]]; then finalizarEjecucion 20; fi
 	else ejecucion; fi
-	if [[ ! -z $evento ]]; then
-		actualizarInterfaz
-		echo ${evento::-2}
-		unset evento
-		read -p "Presiona cualquier tecla para continuar " -n 1 -r
+	if [[ ! -z $tiempo_break ]] && [[ $(expr $tiempo + 1) -eq $tiempo_break ]]; then
+		modo_debug=1
+		if [[ ! -z $modo_silencio ]]; then
+			modo_silencio_break=1
+			notacionCientifica $mem_tamano "mem_tamano_redondeado" "mem_tamano_abreviacion" #abrevia la memoria
+			notacionCientifica $mem_usada "mem_usada_redondeado" "mem_usada_abreviacion"
+			notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
+			unset modo_silencio
+		fi
 	fi
-	tiempo=$(expr $tiempo + 1)
-}
-
-function stepSilencio() {
-	if [[ $tiempo -le $tiempo_final ]]; then
-		poblarSwap $tiempo
-	elif [[ ${#swp_proc_id[@]} -eq 0 ]]; then finalizarEjecucion 0; fi
-	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then poblarMemoria; fi
-	if [[ ${#mem_proc_id[@]} -eq 0 ]]; then
-		if [[ ${proc_tamano[${swp_proc_index[0]}]} -gt $mem_tamano ]]; then finalizarEjecucion 20; fi
-	else ejecucion; fi
-	unset evento
+	if [[ ! -z $tiempo_unbreak ]] && [[ $tiempo -eq $tiempo_unbreak ]]; then
+		unset modo_debug
+		actualizarInterfaz
+		if [[ ! -z $modo_silencio_break ]]; then
+			modo_silencio=1
+			unset modo_silencio_break
+		fi
+	fi
+	if [[ -z $modo_silencio ]]; then
+		if [[ -z $modo_debug ]]; then
+			if [[ ! -z $evento ]]; then
+				actualizarInterfaz
+				echo ${evento::-2}
+				unset evento
+				read -p "Presiona cualquier tecla para continuar " -n 1 -r
+			fi
+		else
+			actualizarInterfaz
+			echo ${evento::-2}
+			unset evento
+			read -p "Presiona cualquier tecla para continuar " -n 1 -r
+		fi
+	else
+		unset evento
+	fi
 	tiempo=$(expr $tiempo + 1)
 }
 
@@ -357,8 +397,8 @@ function poblarMemoria() {
 					for ((j=0 ; j<"${proc_tamano[${swp_proc_index[0]}]}" ; j++ )); do #por cada tamaño del proceso
 						mem_paginas[$(expr $i + $j)]="${swp_proc_index[0]}" #guarda la id de cada proceso de memoria en el espacio correspondiente
 						mem_paginas_secuencia[$(expr $i + $j)]="$(echo ${proc_paginas[${swp_proc_index[0]}]} | cut -d ',' -f $((j+1))  )" #guarda la secuencia de paginas de cada proceso de memoria en el espacio correspondiente
-						mem_proc_posicion[${swp_proc_index[0]}]="${mem_proc_posicion[${swp_proc_index[0]}]}$(expr $i + $j) " #en cada proceso guarda la posicion de sus paginas en memoria
 					done
+					actualizarPosiciones
 					unset swp_proc_id[0] #saca el proceso del swap
 					unset swp_proc_index[0] #saca el proceso del swap
 					swp_proc_id=( "${swp_proc_id[@]}" ) #desfragmento el swap
@@ -398,11 +438,10 @@ function eliminarMemoria() {
 			evento+="${mem_proc_id[$i]} > OUT, "
 			unset mem_proc_index[$i] #saca el indice de memoria
 			unset mem_proc_id[$i] #saca el id de memoria
-			for pos in ${mem_proc_posicion[$index_objetivo]}; do #por cada posicion del proceso hacer...
+			for pos in ${proc_posicion[$index]}; do #por cada posicion del proceso hacer...
 				unset mem_paginas_secuencia[$pos] #saca las paginas
 			done
 			unset mem_proc_tamano[$i] #saca el proceso de tamaño de la memoria
-			unset mem_proc_posicion[$i] #saca el proceso de posicion de la memoria
 			mem_proc_index=( "${mem_proc_index[@]}" ) #desfragmenta la lista
 			mem_proc_id=( "${mem_proc_id[@]}" )
 			mem_proc_tamano=( "${mem_proc_tamano[@]}" )
@@ -417,27 +456,32 @@ function eliminarMemoria() {
 }
 
 function defragmentarMemoria() {
-	local pivot=-1
-	local pivot_final=0
-	local count=0
-	for ((i=$mem_tamano ; i>0 ; i-- )); do #cuenta lso procesos vacios a la derecha
-		if [[ -z ${mem_paginas[$i]} ]]; then
-			if [[ $pivot -gt 0 ]]; then ((count++)); fi
-		else
-			if [[ $pivot -lt 0 ]]; then pivot_final=$i; fi
-			pivot=$i
-		fi
-	done
-	for ((i=0 ; j<=$count ; j++ )); do # por cada hueco hace...
-		for ((i=0 ; i<=$pivot_final ; i++ )); do #por cada proceso comprueba si hay un hueco a la izquierda
-			if [[ -z ${mem_paginas[$i]} ]] && [[ ! -z ${mem_paginas[$(expr $i + 1)]} ]]; then #si hay hueco se mueve
-				mem_paginas[$i]=${mem_paginas[$(expr $i + 1)]}
-				mem_paginas_secuencia[$i]=${mem_paginas_secuencia[$(expr $i + 1)]}
-				unset mem_paginas[$(expr $i + 1)]
-				unset mem_paginas_secuencia[$(expr $i + 1)]
+	until [[ $(expr $pivot_final + 1) -eq $mem_usada ]]; do
+			local -i pivot=-1
+			local -i pivot_final=0
+			local -i count=0
+		for ((i=$(expr $mem_tamano - 1) ; i>=0 ; i-- )); do
+			if [[ -z ${mem_paginas[$i]} ]]; then
+				if [[ $pivot -gt 0 ]]; then ((count++)); fi
+			else
+				if [[ $pivot -lt 0 ]]; then pivot_final=$i; fi
+				pivot=$i
 			fi
 		done
+		if [[ ! $(expr $pivot_final + 1) -eq $mem_usada ]]; then
+			for ((j=0 ; j<=$count ; j++ )); do # por cada hueco hace...
+				for ((i=0 ; i<=$pivot_final ; i++ )); do #por cada proceso comprueba si hay un hueco a la izquierda
+					if [[ -z ${mem_paginas[$i]} ]] && [[ ! -z ${mem_paginas[$(expr $i + 1)]} ]]; then #si hay hueco se mueve
+						mem_paginas[$i]=${mem_paginas[$(expr $i + 1)]}
+						mem_paginas_secuencia[$i]=${mem_paginas_secuencia[$(expr $i + 1)]}
+						unset mem_paginas[$(expr $i + 1)]
+						unset mem_paginas_secuencia[$(expr $i + 1)]
+					fi
+				done
+			done
+		fi
 	done
+	actualizarPosiciones
 	evento+="DEFRAG, "
 }
 
@@ -471,13 +515,26 @@ function actualizarPaginas() {
 	local -i primera_posicion=-1
 	IFS=',' read -r -a paginas <<< "${proc_paginas[$index]}"
 	local objetivo=${paginas[$ejecucion]}
-	for posicion in ${mem_proc_posicion[$index]}; do
+	for posicion in ${proc_posicion[$index]}; do
 		if [[ primera_posicion -eq -1 ]]; then primera_posicion=$posicion; fi
 		if [[ ${mem_paginas_secuencia[$posicion]} -eq $objetivo ]]; then fallo=0; fi
 	done
 	if [[ $fallo -eq 1 ]]; then
 		mem_paginas_secuencia[$(expr $ejecucion % ${proc_tamano[$index]} + $primera_posicion)]=$objetivo
 	fi
+}
+
+function actualizarPosiciones() {
+	for ((p=0; p<${#mem_proc_index[@]}; p++ )) ; do
+		local -a posiciones=()
+		local inx=${mem_proc_index[$p]}
+		for ((i=0; i<$mem_tamano; i++ )); do
+			if [[ ${mem_paginas[$i]} -eq $inx ]] && [[ ! -z ${mem_paginas[$i]} ]]; then
+				posiciones+=("$i")
+			fi
+		done
+		proc_posicion[$inx]=${posiciones[@]}
+	done
 }
 
 function ultimoTiempo() {
@@ -490,11 +547,14 @@ function ultimoTiempo() {
 
 function finalizarEjecucion() {
 	local error=$1
+	log 0 "TIEMPO DE EJECUCIÓN: ${SECONDS}s"
 	if [[ $error -eq 0 ]]; then
+		log 5 "ÚLTIMO TIEMPO: $(expr $tiempo - 1)"
 		log 9 "FINAL DE EJECUCIÓN CON FECHA $(date)"
 	else
 		log 9 "EXCEPCIÓN [${error}] CON FECHA $(date)"
 	fi
+	log 2 $(printf "%0.s-" {1..74})
 	exit $error
 }
 
@@ -559,7 +619,9 @@ function cabeceraLog() {
 # COMIENZO DE PROGRAMA PRINCIPAL
 #_____________________________________________
 
-nivel_log=3
+SECONDS=0
+nivel_log=2
+log 2 $(printf "%0.s-" {1..74})
 log 9 "EJECUCIÓN DE ${0} EN $(hostname) CON FECHA $(date)"
 log 9
 
@@ -587,11 +649,11 @@ elif [[ -z $modo_silencio ]]; then header 1 ; header 0; fi #en caso de que sea e
 
 pedirDatos
 tiempo=-1
+
 if [[ -z $modo_silencio ]]; then #si no es modo silecioso
 	notacionCientifica $mem_tamano "mem_tamano_redondeado" "mem_tamano_abreviacion" #abrevia la memoria
 	notacionCientifica $mem_usada "mem_usada_redondeado" "mem_usada_abreviacion"
 	notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
-	while true ; do step ; done
-else
-	while true ; do stepSilencio ; done #loop infinito de pasos sin interfaz grafica
 fi
+
+while true ; do step ; done
