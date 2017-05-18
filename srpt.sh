@@ -1,9 +1,34 @@
 #! /bin/bash
+#
+# Simula la ejeución de una serie de procesos en un algoritmo SRPT
+# AUTHOR: Rodrigo Díaz, Diego Gonzalez
+# LICENSE: MIT
 
 #_____________________________________________
 # COMIENZO DE FUNCIONES
 #_____________________________________________
 
+#######################################
+#	Muestra cabeceras gráficas
+#	Globales:
+#		mem_tamano
+#		mem_tamano_abreviacion
+#		mem_tamano_redondeado
+#		mem_usada
+#		mem_usada_abreviacion
+#		mem_usada_redondeado
+#		proc_count
+#		proc_count_abreviacion
+#		proc_count_redondeado
+#		tiempo
+#	Argumentos:
+#		modo:
+#			0 = linea separación
+#			1 = cabecera principal
+#			2 = cabecera secundaria
+# Devuelve:
+#   Texto
+#######################################
 function header() {
 	local -ri modo=$1
 	if [ $modo -eq 0 ]; then
@@ -37,12 +62,41 @@ function header() {
 	fi
 }
 
+#######################################
+#	Solicita datos al usuario
+#	Globales:
+#		mem_tamano
+#		proc_color
+#		proc_color_secuencia
+#		proc_count
+#		proc_id
+#		proc_pagina_tamano
+#		proc_paginas
+#		proc_tamano
+#		proc_tiempo_ejecucion
+#		proc_tiempo_ejecucion_restante
+#		proc_tiempo_llegada
+#		tiempo_final
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function pedirDatos() {
 	if [ -z "$mem_tamano" ]; then #si el tamaño de memoria nulo
 		until [[ $mem_tamano =~ ^[0-9]+$ ]] && [[ ! $mem_tamano -eq 0 ]]; do #hasta el tamaño de memoria empiece entre 0 y 9 Y sea diferente a 0 hacer...
 			printf "\e[1A%80s\r" " " #imprimir 80 espacios en color 1A
 			read -p "Tamaño (en bloques) de la memoria: " mem_tamano #te pide que escribas algo y eso eso va a ser el tamaño de memoria
 			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r" #te muestra en pantalla el texto y vuelve a la linea anterior
+		done
+		printf "%80s\n" " "
+	fi
+
+	if [ -z "$proc_pagina_tamano" ]; then
+		until [[ $proc_pagina_tamano =~ ^[0-9]+$ ]] && [[ ! $proc_pagina_tamano -eq 0 ]]; do
+			printf "\e[1A%80s\r" " "
+			read -p "Direcciones por página: " proc_pagina_tamano
+			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 		done
 		printf "%80s\n" " "
 	fi
@@ -73,10 +127,10 @@ function pedirDatos() {
 			printf "%80s\n" " "
 
 			printf "\e[1A%80s\r" " "
-			read -p "[P${i}] Secuencia de páginas: " proc_paginas[$i]
+			read -p "[P${i}] Secuencia de direcciones: " proc_paginas[$i]
 			echo
 
-			convertirDireccion $i "proc_paginas"
+			proc_paginas[$i]=$(convertirDireccion ${proc_paginas[$i]})
 			proc_id[$i]="P${i}" #Si no tiene la id asignada le da una
 			if [[ $i -lt ${#proc_color_secuencia[@]} ]]; then
 				proc_color[$i]="48;5;$(echo ${proc_color_secuencia[$i]} | cut -d ',' -f2);38;5;$(echo ${proc_color_secuencia[$i]} | cut -d ',' -f1)"
@@ -92,6 +146,43 @@ function pedirDatos() {
 	tiempo_final="$(ultimoTiempo)"
 }
 
+#######################################
+#	Lee argumentos de ejecución
+#	Globales:
+#		filename
+#		mem_tamano
+#		modo_debug
+#		modo_silencio
+#		nivel_log
+#		proc_count
+#		tiempo_break
+#		tiempo_unbreak
+#	Argumentos:
+#		-b	TIEMPO
+#			Habilita modo debug en TIEMPO
+#		-f	FILENAME
+#			Cargar datos desde FILENAME
+#		-l	NIVEL
+#			Nivel de salida por fichero:
+#				0		debug
+#				1		extendido
+#				2		estructural
+#				3		por defecto
+#				4		alertas
+#				5		mínimo
+#				9		ejecición
+#				10	deshabilitado
+#		-m	BLOQUES
+#			Tamaño de memoria en bloques
+#		-p	NÚMERO
+#			Número de procesos
+#		-s
+#			Deshabilita salida por pantalla
+#		-u TIEMPO
+#			Deshabilita modo debug en TIEMPO
+# Devuelve:
+#		Nada
+#######################################
 function leerArgs() {
 	while [ "$1" != "" ]; do #mientras el parametro 1 no sea un espacio hacer
 		case $1 in
@@ -186,6 +277,27 @@ function leerArgs() {
 	fi
 }
 
+#######################################
+#	Lee datos de archivo
+#	Globales:
+#		filename
+#		mem_tamano
+#		proc_color
+#		proc_color_secuencia
+#		proc_count
+#		proc_id
+#		proc_pagina_tamano
+#		proc_paginas
+#		proc_tamano
+#		proc_tiempo_ejecucion
+#		proc_tiempo_ejecucion_restante
+#		proc_tiempo_llegada
+#		tiempo_final
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function leerArchivo() {
 	local -i i=0
 	if [ ! -f $filename ]; then
@@ -216,7 +328,7 @@ function leerArchivo() {
 				proc_id[$i]="P${i}" #si el proceso no tiene id se le asigna uno por defecto
 				log 0 "Nueva ID \e[44m${proc_id[$i]}" "Nueva ID <${proc_id[$i]}>"
 			fi
-			convertirDireccion $i "proc_paginas"
+			proc_paginas[$i]=$(convertirDireccion ${proc_paginas[$i]})
 			proc_tiempo_ejecucion[$i]=0
 			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #cuenta el numero de paginas y lo asigna al tiempo de ejecucion  restante
 			log 3 "Proceso \e[44m${i}\e[49m, con ID \e[44m${proc_id[$i]}\e[49m, Secuencia \e[44m${proc_paginas[$i]}\e[49m, Bloques \e[44m${proc_tamano[$i]}\e[49m, Llegada \e[44m${proc_tiempo_llegada[$i]}\e[49m" "Proceso <${i}>, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
@@ -231,7 +343,7 @@ function leerArchivo() {
 						log 3 "Configuración, bloques de memoria \e[44m$mem_tamano" "Configuración, bloques de memoria <${mem_tamano}>";;
 					"DIRECCIONES")
 						proc_pagina_tamano=$(echo $line | cut -d ':' -f2)
-						log 0 "de sistema \e[44m$proc_pagina_tamano" "de sistema <${proc_pagina_tamano}>"
+						log 0 "de página \e[44m$proc_pagina_tamano" "de página <${proc_pagina_tamano}>"
 						log 3 "Configuración, tamaño de pagina \e[44m$proc_pagina_tamano" "Configuración, tamaño de pagina <${proc_pagina_tamano}>";;
 					*)
 						echo 'CONFIGURACIÓN EN FICHERO NO VÁLIDA'
@@ -247,19 +359,48 @@ function leerArchivo() {
 	fi
 }
 
+#######################################
+#	Convierte páginas a direcciones
+#	Globales:
+#		proc_pagina_tamano
+#	Argumentos:
+#		direcciones
+# Devuelve:
+#		paginas
+#######################################
 function convertirDireccion() {
-	local -ri index=$1
-	local -n destino="$2"
+	local -r secuencia=$1
 	local -a direcciones=()
-	IFS=',' read -r -a direcciones <<< "${destino[$index]}"
-	destino[$index]=""
+	local paginas
+	IFS=',' read -r -a direcciones <<< "$secuencia"
 	for direccion in ${direcciones[@]}; do
-		destino[$index]+="$(expr $direccion / $proc_pagina_tamano),"
+		paginas+="$(expr $direccion / $proc_pagina_tamano),"
 	done
-	destino[$index]=$(echo "${destino[$index]::-1}")
+	echo "${paginas::-1}"
 }
 
+#######################################
+#	Muestra datos por pantalla
+#	Globales:
+#		mem_paginas
+#		mem_paginas_secuencia
+#		mem_proc_id
+#		mem_proc_index
+#		proc_color
+#		proc_id
+#		proc_paginas
+#		proc_posicion
+#		proc_tamano
+#		proc_tiempo_ejecucion_restante
+#		swp_proc_id
+#		swp_proc_index
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function actualizarInterfaz() {
+	local -i i
 	header 2
 	printf "\e[38;5;17m#\e[39m     \e[4m%s\e[0m      \e[38;5;18m#\e[39m     \e[4m%s\e[0m     \e[38;5;18m~\e[39m   \e[4m%s\e[0m   \e[38;5;18m~\e[39m     \e[4m%s\e[0m      \e[38;5;17m#\e[39m\n" "SWP" "ID" "T. RESTANTE" "POSICIONES EN MEMORIA" #crea la cabecera de la tabla
 	for i in {0..10}; do
@@ -308,6 +449,32 @@ function actualizarInterfaz() {
 	header 0
 }
 
+#######################################
+#	Realiza un paso de tiempo
+#	Globales:
+#		evento
+#		mem_proc_id
+#		mem_tamano
+#		mem_tamano_abreviacion
+#		mem_tamano_redondeado
+#		mem_usada
+#		mem_usada_abreviacion
+#		mem_usada_redondeado
+#		modo_debug
+#		modo_silencio
+#		proc_count
+#		proc_count_abreviacion
+#		proc_count_redondeado
+#		swp_proc_id
+#		tiempo
+#		tiempo_break
+#		tiempo_final
+#		tiempo_unbreak
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function step() {
 	if [[ $tiempo -le $tiempo_final ]]; then poblarSwap; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then poblarMemoria; fi
@@ -364,6 +531,26 @@ function step() {
 	tiempo=$(expr $tiempo + 1)
 }
 
+#######################################
+#	Muestra datos por fichero
+#	Globales:
+#		mem_paginas
+#		mem_paginas_secuencia
+#		mem_proc_id
+#		mem_proc_index
+#		proc_color
+#		proc_id
+#		proc_paginas
+#		proc_posicion
+#		proc_tamano
+#		proc_tiempo_ejecucion_restante
+#		swp_proc_id
+#		swp_proc_index
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function stepLog() {
 	log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
 	log 3 "\e[38;5;17m#\e[39m$(printf "%32s" " ")INSTANTE: $(printf "%3d" "$tiempo")$(printf "%33s" " ")\e[38;5;17m#\e[39m" "#$(printf "%29s" " ")INSTANTE: $(printf "%3d" "$tiempo")$(printf "%30s" " ")#"
@@ -404,12 +591,23 @@ function stepLog() {
 	log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
 }
 
+#######################################
+#	Abrevia número
+#	Globales:
+#		Nada
+#	Argumentos:
+#		global abreviacion
+#		global redondeado
+#		numero
+# Devuelve:
+#		Nada
+#######################################
 function notacionCientifica() {
 	local -ri numero=$1 #primer argumento es el numero a redondear
 	local -rn redondeado="$2" abreviacion="$3" #la variable donde se guardara la aproximación y la variable donde se guarda la abreviacion
 	local -i i=1000
 	while [[ -z $redondeado ]]; do
-		if [[ numero -ge $i ]]; then
+		if [[ $numero -ge $i ]]; then
 			i=$(expr $i \* 1000)
 		else
 			case "$i" in
@@ -431,6 +629,20 @@ function notacionCientifica() {
 	done
 }
 
+#######################################
+#	Mete procesos en swap
+#	Globales:
+#		evento
+#		proc_id
+#		proc_tiempo_llegada
+#		swp_proc_id
+#		swp_proc_index
+#		tiempo
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function poblarSwap() {
 	local -i i
 	for (( i=0 ; i<"${#proc_id[@]}"; i++ )); do
@@ -442,6 +654,28 @@ function poblarSwap() {
 	done
 }
 
+#######################################
+#	Mete procesos en memoria
+#	Globales:
+#		evento
+#		mem_paginas
+#		mem_paginas_secuencia
+#		mem_proc_id
+#		mem_proc_index
+#		mem_proc_tamano
+#		mem_tamano
+#		mem_usada
+#		mem_usada_abreviacion
+#		mem_usada_redondeado
+#		modo_silencio
+#		proc_tamano
+#		swp_proc_id
+#		swp_proc_index
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function poblarMemoria() {
 	mem_usada=${#mem_paginas[@]} #memoria usada es igual al numero de paginas
 	local -i espacio_valido=1 i j
@@ -488,6 +722,26 @@ function poblarMemoria() {
 	fi
 }
 
+#######################################
+#	Saca procesos de memoria
+#	Globales:
+#		evento
+#		mem_paginas
+#		mem_proc_id
+#		mem_proc_index
+#		mem_proc_tamano
+#		mem_tamano
+#		mem_usada
+#		mem_usada_abreviacion
+#		mem_usada_redondeado
+#		modo_silencio
+#		proc_posicion
+#	Argumentos:
+#		Indice de proceso
+#		Indice de memoria
+# Devuelve:
+#		Nada
+#######################################
 function eliminarMemoria() {
 	local -ri index_objetivo=$1 index_mem_objetivo=$2
 	local -i i
@@ -519,6 +773,19 @@ function eliminarMemoria() {
 	fi
 }
 
+#######################################
+#	Agrupa procesos en memoria
+#	Globales:
+#		evento
+#		mem_paginas
+#		mem_paginas_secuencia
+#		mem_tamano
+#		mem_usada
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function defragmentarMemoria() {
 	local -i i j
 	until [[ $(expr $pivot_final + 1) -eq $mem_usada ]]; do
@@ -548,6 +815,17 @@ function defragmentarMemoria() {
 	evento+="DEFRAG, "
 }
 
+#######################################
+#	Ejecuta un proceso en CPU
+#	Globales:
+#		mem_proc_index
+#		proc_tiempo_ejecucion
+#		proc_tiempo_ejecucion_restante
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function ejecucion() {
 	local -i min=${proc_tiempo_ejecucion_restante[${mem_proc_index[0]}]} min_i=${mem_proc_index[0]} min_mem_index=0 i=0
 	for index in ${mem_proc_index[@]}; do #por cada indice de la memoria hacer...
@@ -567,6 +845,18 @@ function ejecucion() {
 	fi
 }
 
+#######################################
+#	Realiza sustitución de páginas
+#	Globales:
+#		mem_paginas_secuencia
+#		mem_proc_index
+#		proc_tamano
+#		proc_tiempo_ejecucion
+#	Argumentos:
+#		Index de proceso
+# Devuelve:
+#		Nada
+#######################################
 function actualizarPaginas() {
 	local -ri index=$1 ejecucion=${proc_tiempo_ejecucion[${index}]}
 	local -a paginas=()
@@ -582,6 +872,18 @@ function actualizarPaginas() {
 	fi
 }
 
+#######################################
+#	Localiza cada proceso en memoria
+#	Globales:
+#		mem_paginas
+#		mem_proc_index
+#		mem_tamano
+#		proc_posicion
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function actualizarPosiciones() {
 	local -i p i
 	for ((p=0; p<${#mem_proc_index[@]}; p++ )) ; do
@@ -596,6 +898,15 @@ function actualizarPosiciones() {
 	done
 }
 
+#######################################
+#	Calcula última llegada de proceso
+#	Globales:
+#		proc_tiempo_llegada
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Último tiempo
+#######################################
 function ultimoTiempo() {
 	local -i tiempo_max=0
 	for tiempo in "${proc_tiempo_llegada[@]}"; do
@@ -604,6 +915,16 @@ function ultimoTiempo() {
 	echo $tiempo_max
 }
 
+#######################################
+#	Calcula última llegada de proceso
+#	Globales:
+#		date
+#		tiempo
+#	Argumentos:
+#		Código de error
+# Devuelve:
+#		Nada
+#######################################
 function finalizarEjecucion() {
 	local -ri error=$1
 	log 0 "TIEMPO DE EJECUCIÓN: ${SECONDS}s"
@@ -617,6 +938,20 @@ function finalizarEjecucion() {
 	exit $error
 }
 
+#######################################
+#	Escribe en ficheros de salida
+#	Globales:
+#		nivel_log
+#	Argumentos:
+#		Nível
+#		Mensaje con escapes:
+#			NULL = Linea vacia
+#		Mensaje sin escapes:
+#			NULL = Linea vacia
+#			@ = Mismo mensaje que con esc.
+# Devuelve:
+#		Nada
+#######################################
 function log() {
 	local -ri nivel=$1
 	local -r mensaje=$2 mensaje_noesc=$3
@@ -638,6 +973,15 @@ function log() {
 	fi
 }
 
+#######################################
+#	Selecciona color del nivel de log
+#	Globales:
+#		Nada
+#	Argumentos:
+#		Nível
+# Devuelve:
+#		Color
+#######################################
 function colorLog() {
 	local -ri nivel=$1
 	case $nivel in
@@ -651,6 +995,15 @@ function colorLog() {
 	esac
 }
 
+#######################################
+#	Escribe cabecera de fichero
+#	Globales:
+#		nivel_log
+#	Argumentos:
+#		Nada
+# Devuelve:
+#		Nada
+#######################################
 function cabeceraLog() {
 	if [[ $nivel_log -le 1 ]]; then
 		log 1 'LICENCIA DE USO:' '@'
@@ -705,9 +1058,9 @@ function cabeceraLog() {
 #_____________________________________________
 
 declare -a proc_id proc_tamano proc_paginas proc_tiempo_llegada proc_tiempo_ejecucion proc_tiempo_ejecucion_restante proc_posicion mem_paginas mem_proc_id mem_proc_index mem_proc_tamano swp_proc_id swp_proc_index
-declare -ra proc_color_secuencia=(1,0 2,0 3,0 4,0 5,0 6,0 7,0 21,0 23,0 52,0 123,0 147,0 202,0 222,0 241,0)
-declare -i proc_count mem_tamano mem_usada tiempo=-1 mem_tamano_redondeado mem_usada_redondeado proc_count_redondeado
+declare -i proc_count mem_tamano mem_usada=0 tiempo=-1 mem_tamano_redondeado mem_usada_redondeado proc_count_redondeado
 declare mem_tamano_abreviacion mem_usada_abreviacion proc_count_abreviacion
+declare -ra proc_color_secuencia=(1,0 2,0 3,0 4,0 5,0 6,0 7,0 21,0 23,0 52,0 123,0 147,0 202,0 222,0 241,0) #fg,bg (88/256)
 
 SECONDS=0
 nivel_log=3
