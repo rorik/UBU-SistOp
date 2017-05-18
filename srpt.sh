@@ -26,7 +26,7 @@
 #			0 = linea separación
 #			1 = cabecera principal
 #			2 = cabecera secundaria
-# Devuelve:
+#	Devuelve:
 #   Texto
 #######################################
 function header() {
@@ -79,7 +79,7 @@ function header() {
 #		tiempo_final
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function pedirDatos() {
@@ -180,7 +180,7 @@ function pedirDatos() {
 #			Deshabilita salida por pantalla
 #		-u TIEMPO
 #			Deshabilita modo debug en TIEMPO
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function leerArgs() {
@@ -295,7 +295,7 @@ function leerArgs() {
 #		tiempo_final
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function leerArchivo() {
@@ -365,7 +365,7 @@ function leerArchivo() {
 #		proc_pagina_tamano
 #	Argumentos:
 #		direcciones
-# Devuelve:
+#	Devuelve:
 #		paginas
 #######################################
 function convertirDireccion() {
@@ -396,7 +396,7 @@ function convertirDireccion() {
 #		swp_proc_index
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function actualizarInterfaz() {
@@ -472,7 +472,7 @@ function actualizarInterfaz() {
 #		tiempo_unbreak
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function step() {
@@ -548,7 +548,7 @@ function step() {
 #		swp_proc_index
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function stepLog() {
@@ -599,7 +599,7 @@ function stepLog() {
 #		global abreviacion
 #		global redondeado
 #		numero
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function notacionCientifica() {
@@ -640,7 +640,7 @@ function notacionCientifica() {
 #		tiempo
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function poblarSwap() {
@@ -673,7 +673,7 @@ function poblarSwap() {
 #		swp_proc_index
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function poblarMemoria() {
@@ -739,7 +739,7 @@ function poblarMemoria() {
 #	Argumentos:
 #		Indice de proceso
 #		Indice de memoria
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function eliminarMemoria() {
@@ -783,7 +783,7 @@ function eliminarMemoria() {
 #		mem_usada
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function defragmentarMemoria() {
@@ -823,7 +823,7 @@ function defragmentarMemoria() {
 #		proc_tiempo_ejecucion_restante
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function ejecucion() {
@@ -854,7 +854,7 @@ function ejecucion() {
 #		proc_tiempo_ejecucion
 #	Argumentos:
 #		Index de proceso
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function actualizarPaginas() {
@@ -881,7 +881,7 @@ function actualizarPaginas() {
 #		proc_posicion
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function actualizarPosiciones() {
@@ -904,7 +904,7 @@ function actualizarPosiciones() {
 #		proc_tiempo_llegada
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Último tiempo
 #######################################
 function ultimoTiempo() {
@@ -922,7 +922,7 @@ function ultimoTiempo() {
 #		tiempo
 #	Argumentos:
 #		Código de error
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function finalizarEjecucion() {
@@ -949,7 +949,7 @@ function finalizarEjecucion() {
 #		Mensaje sin escapes:
 #			NULL = Linea vacia
 #			@ = Mismo mensaje que con esc.
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function log() {
@@ -979,7 +979,7 @@ function log() {
 #		Nada
 #	Argumentos:
 #		Nível
-# Devuelve:
+#	Devuelve:
 #		Color
 #######################################
 function colorLog() {
@@ -1001,7 +1001,7 @@ function colorLog() {
 #		nivel_log
 #	Argumentos:
 #		Nada
-# Devuelve:
+#	Devuelve:
 #		Nada
 #######################################
 function cabeceraLog() {
