@@ -160,6 +160,8 @@ function pedirDatos() {
 #	Argumentos:
 #		-b	TIEMPO
 #			Habilita modo debug en TIEMPO
+#		-d
+#			Habilita modo debug
 #		-f	FILENAME
 #			Cargar datos desde FILENAME
 #		-l	NIVEL
@@ -1094,9 +1096,9 @@ fi
 
 cabeceraLog
 
-if [ $# -eq 0 ]; then #si no hay argumentos entonces...
+if [ -z $filename ]; then #si no hay argumento de archivo entonces...
 	header 1 ; header 0
-	log 5 'No Argumentos, comprobando modo de introduccion de datos:' '@'
+	log 5 'No Argumento filename, comprobando modo de introduccion de datos:' '@'
 	read -p 'Introducción de datos por archivo (s/n): ' -n 1 -r ; echo
 	log 0 "RESPUESTA INPUT: \e[34m$REPLY\e[39m" "RESPUESTA INPUT: <$REPLY>"
 	if [[ $REPLY =~ ^[SsYy]$ ]]; then #si la respuesta es S
