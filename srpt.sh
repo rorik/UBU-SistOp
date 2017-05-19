@@ -412,7 +412,7 @@ function actualizarInterfaz() {
 			elif [[ ${proc_tamano[${swp_proc_index[$i]}]} -lt 100 ]]; then
 				printf "%8s (\e[${proc_color[${swp_proc_index[$i]}]}m%d\e[0m)" "${swp_proc_id[$i]:0:8}" "${proc_tamano[${swp_proc_index[$i]}]}"
 			else
-				printf "%7s (\e[${proc_color[${swp_proc_index[$i]}]}m>99\e[0m)" "${swp_proc_id[$i]:0:7}" "${proc_tamano[${swp_proc_index[$i]}]}"
+				printf "%7s (\e[${proc_color[${swp_proc_index[$i]}]}m>99\e[0m)" "${swp_proc_id[$i]:0:7}"
 			fi
 		else
 			printf "%13s" " "
@@ -553,40 +553,40 @@ function step() {
 #######################################
 function stepLog() {
 	local linea linea_no_esc
-	log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
-	log 3 "\e[38;5;17m#\e[39m$(printf "%32s" " ")INSTANTE: $(printf "%3d" "$tiempo")$(printf "%33s" " ")\e[38;5;17m#\e[39m" "#$(printf "%29s" " ")INSTANTE: $(printf "%3d" "$tiempo")$(printf "%30s" " ")#"
-	log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
-	log 3 '\e[38;5;17m#\e[39m     \e[4mSWAP\e[0m     \e[38;5;18m#\e[39m     \e[4mID\e[0m     \e[38;5;18m~\e[39m   \e[4mT. RESTANTE\e[0m   \e[38;5;18m~\e[39m     \e[4mPOSICIONES EN MEMORIA\e[0m      \e[38;5;17m#\e[39m' '#    SWAP    #    ID     ~  T. RESTANTE   ~    POSICIONES EN MEMORIA     #'
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
+	log 3 "$(printf "\e[38;5;17m#\e[39m%32sINSTANTE: %3d%33s\e[38;5;17m#\e[39m" " " "$tiempo" " ")" "$(printf "#%32sINSTANTE: %3d%33s#" " " "$tiempo" " ")"
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
+	log 3 '\e[38;5;17m#\e[39m     \e[4mSWAP\e[0m     \e[38;5;18m#\e[39m     \e[4mID\e[0m     \e[38;5;18m~\e[39m   \e[4mT. RESTANTE\e[0m   \e[38;5;18m~\e[39m     \e[4mPOSICIONES EN MEMORIA\e[0m      \e[38;5;17m#\e[39m' '#     SWAP     #     ID     ~   T. RESTANTE   ~      POSICIONES EN MEMORIA     #'
 	for i in {0..10}; do
-		linea='\e[38;5;17m#\e[39m'; linea_no_esc='# '
+		linea='\e[38;5;17m#\e[39m'; linea_no_esc='#'
 		if [[ ! -z ${swp_proc_id[$i]} ]]; then
 			linea+="\e[${proc_color[${swp_proc_index[$i]}]}m"
 			if [[ ${proc_tamano[${swp_proc_index[$i]}]} -lt 10 ]]; then
 				linea+="$(printf "%9s\e[0m (\e[${proc_color[${swp_proc_index[$i]}]}m%d\e[0m)" "${swp_proc_id[$i]:0:9}" "${proc_tamano[${swp_proc_index[$i]}]}")"
-				linea_no_esc+="$(printf "%6s (%d)" "${swp_proc_id[$i]:0:6}" "${proc_tamano[${swp_proc_index[$i]}]}")"
+				linea_no_esc+="$(printf "%9s (%d)" "${swp_proc_id[$i]:0:9}" "${proc_tamano[${swp_proc_index[$i]}]}")"
 			elif [[ ${proc_tamano[${swp_proc_index[$i]}]} -lt 100 ]]; then
 				linea+="$(printf "%8s\e[0m (\e[${proc_color[${swp_proc_index[$i]}]}m%d\e[0m)" "${swp_proc_id[$i]:0:8}" "${proc_tamano[${swp_proc_index[$i]}]}")"
-				linea_no_esc+="$(printf "%5s (%d)" "${swp_proc_id[$i]:0:5}" "${proc_tamano[${swp_proc_index[$i]}]}")"
+				linea_no_esc+="$(printf "%8s (%d)" "${swp_proc_id[$i]:0:8}" "${proc_tamano[${swp_proc_index[$i]}]}")"
 			else
-				linea+="$(printf "%7s\e[0m (\e[${proc_color[${swp_proc_index[$i]}]}m>99\e[0m)" "${swp_proc_id[$i]:0:7}" "${proc_tamano[${swp_proc_index[$i]}]}")"
-				linea_no_esc+="$(printf "%4s (>99)" "${swp_proc_id[$i]:0:4}" "${proc_tamano[${swp_proc_index[$i]}]}")"
+				linea+="$(printf "%7s\e[0m (\e[${proc_color[${swp_proc_index[$i]}]}m>99\e[0m)" "${swp_proc_id[$i]:0:7}")"
+				linea_no_esc+="$(printf "%7s (>99)" "${swp_proc_id[$i]:0:9}")"
 			fi
 		else
-			linea+='             '; linea_no_esc+='          '
+			linea+='             '; linea_no_esc+='             '
 		fi
 		linea+=' \e[38;5;18m#\e[39m '; linea_no_esc+=' # '
 		if [[ ! -z ${mem_proc_index[$i]} ]]; then
 			linea+="$(printf "\e[${proc_color[${mem_proc_index[$i]}]}m%10s\e[0m \e[38;5;18m~\e[39m %5s\e[${proc_color[${mem_proc_index[$i]}]}m%4d\e[0m%6s \e[38;5;18m~\e[39m \e[${proc_color[${mem_proc_index[$i]}]}m%-30s\e[0m " "${mem_proc_id[$i]:0:10}" " " "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" " " "${proc_posicion[${mem_proc_index[$i]}]:0:30}")"
-			linea_no_esc+="$(printf "%9s ~ %4s%4d%6s ~ %-29s" "${mem_proc_id[$i]:0:9}" " " "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" " " "${proc_posicion[${mem_proc_index[$i]}]:0:28}")"
+			linea_no_esc+="$(printf "%10s ~ %5s%4d%6s ~ %-30s " "${mem_proc_id[$i]:0:10}" " " "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" " " "${proc_posicion[${mem_proc_index[$i]}]:0:30}")"
 		else
 			linea+="$(printf "%10s \e[38;5;18m~\e[39m %15s \e[38;5;18m~\e[39m %31s" " " " " " ")"
-			linea_no_esc+="$(printf "%9s ~ %14s ~ %29s" " " " " " ")"
+			linea_no_esc+="$(printf "%10s ~ %15s ~ %31s" " " " " " ")"
 		fi
 		linea+='\e[38;5;17m#\e[39m'; linea_no_esc+='#'
 		log 3 "$linea" "$linea_no_esc"
 	done
-	log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
-	linea='\e[38;5;17m#\e[39m '; linea_no_esc=
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
+	linea='\e[38;5;17m#\e[39m '; linea_no_esc='# '
 	for i in {0..24}; do
 		if [[ $i -ne 0 ]] && ([[ ${mem_paginas[$i]} -ne ${mem_paginas[$(expr $i - 1)]} ]] || ([[ -z ${mem_paginas[$i]} ]] && [[ ! -z ${mem_paginas[$(expr $i - 1)]} ]])); then
 			case $i in
@@ -600,15 +600,14 @@ function stepLog() {
 			linea+=' '; linea_no_esc+=' '
 		fi
 		if [[ -z ${mem_paginas[$i]} ]]; then
-			linea+='\e[38;5;236m##\e[0m'; linea_no_esc+='##'
+			linea+='\e[38;5;236m##\e[0m'; linea_no_esc+='=='
 		else
 			linea+="$(printf "\e[${proc_color[${mem_paginas[$i]}]}m%2d\e[0m" "${mem_paginas_secuencia[${i}]}")"
 			linea_no_esc+="$(printf "%2d" "${mem_paginas_secuencia[${i}]}")"
 		fi
 	done
-	#linea+='  '
-	log 3 "$linea  \e[38;5;17m#\e[39m" "${linea_no_esc::-3}"
-	log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
+	log 3 "$linea  \e[38;5;17m#\e[39m" "$linea_no_esc  #"
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
 }
 
 #######################################
@@ -954,7 +953,7 @@ function finalizarEjecucion() {
 	else
 		log 9 "\e[91m!!!\e[39m EXCEPCIÓN \e[91m${error}\e[39m CON FECHA \e[44m$(date)\e[49m \e[91m!!!\e[39m" "!!! EXCEPCIÓN <${error}> CON FECHA <$(date)> !!!"
 	fi
-	log 2 "$(header 0)" "$(printf "%0.s-" {1..74})"
+	log 2 "$(header 0)" "$(printf "%0.s-" {1..80})"
 	exit $error
 }
 
@@ -1027,46 +1026,46 @@ function colorLog() {
 function cabeceraLog() {
 	if [[ $nivel_log -le 1 ]]; then
 		log 1 'LICENCIA DE USO:' '@'
-		log 1 "$(header 0)" "$(printf "%0.s#" {1..74})"
-		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%72s" " ")#"
-		log 1 "\e[38;5;17m#\e[39m                                 MIT License                                  \e[38;5;17m#\e[39m" "#                              MIT License                               #"
-		log 1 "\e[38;5;17m#\e[39m                Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz               \e[38;5;17m#\e[39m" "#             Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz            #"
-		log 1 "\e[38;5;17m#\e[39m            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            \e[38;5;17m#\e[39m" "#         ――――――――――――――――――――――――――――――――――――――――――――――――――――――         #"
-		log 1 "\e[38;5;17m#\e[39m         You may:                                                             \e[38;5;17m#\e[39m" "#      You may:                                                          #"
-		log 1 "\e[38;5;17m#\e[39m           - Use the work commercially                                        \e[38;5;17m#\e[39m" "#        - Use the work commercially                                     #"
-		log 1 "\e[38;5;17m#\e[39m           - Make changes to the work                                         \e[38;5;17m#\e[39m" "#        - Make changes to the work                                      #"
-		log 1 "\e[38;5;17m#\e[39m           - Distribute the compiled code and/or source.                      \e[38;5;17m#\e[39m" "#        - Distribute the compiled code and/or source.                   #"
-		log 1 "\e[38;5;17m#\e[39m           - Incorporate the work into something that                         \e[38;5;17m#\e[39m" "#        - Incorporate the work into something that                      #"
-		log 1 "\e[38;5;17m#\e[39m             has a more restrictive license.                                  \e[38;5;17m#\e[39m" "#          has a more restrictive license.                               #"
-		log 1 "\e[38;5;17m#\e[39m           - Use the work for private use                                     \e[38;5;17m#\e[39m" "#        - Use the work for private use                                  #"
-		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%72s" " ")#"
-		log 1 "\e[38;5;17m#\e[39m         You must:                                                            \e[38;5;17m#\e[39m" "#      You must:                                                         #"
-		log 1 "\e[38;5;17m#\e[39m           - Include the copyright notice in all                              \e[38;5;17m#\e[39m" "#        - Include the copyright notice in all                           #"
-		log 1 "\e[38;5;17m#\e[39m             copies or substantial uses of the work                           \e[38;5;17m#\e[39m" "#          copies or substantial uses of the work                        #"
-		log 1 "\e[38;5;17m#\e[39m           - Include the license notice in all copies                         \e[38;5;17m#\e[39m" "#        - Include the license notice in all copies                      #"
-		log 1 "\e[38;5;17m#\e[39m             or substantial uses of the work                                  \e[38;5;17m#\e[39m" "#          or substantial uses of the work                               #"
-		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%72s" " ")#"
-		log 1 "\e[38;5;17m#\e[39m         You cannot:                                                          \e[38;5;17m#\e[39m" "#      You cannot:                                                       #"
-		log 1 "\e[38;5;17m#\e[39m           - Hold the author liable. The work is                              \e[38;5;17m#\e[39m" "#        - Hold the author liable. The work is                           #"
-		log 1 "\e[38;5;17m#\e[39m             provided \"as is\".                                                \e[38;5;17m#\e[39m" "#          provided \"as is\".                                             #"
-		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%72s" " ")#"
-		log 1 "$(header 0)" "$(printf "%0.s#" {1..74})"
+		log 1 "$(header 0)" "$(printf "%0.s#" {1..80})"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
+		log 1 "\e[38;5;17m#\e[39m                                 MIT License                                  \e[38;5;17m#\e[39m" "#                                 MIT License                                  #"
+		log 1 "\e[38;5;17m#\e[39m                Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz               \e[38;5;17m#\e[39m" "#                Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz               #"
+		log 1 "\e[38;5;17m#\e[39m            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            \e[38;5;17m#\e[39m" "#            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            #"
+		log 1 "\e[38;5;17m#\e[39m         You may:                                                             \e[38;5;17m#\e[39m" "#         You may:                                                             #"
+		log 1 "\e[38;5;17m#\e[39m           - Use the work commercially                                        \e[38;5;17m#\e[39m" "#           - Use the work commercially                                        #"
+		log 1 "\e[38;5;17m#\e[39m           - Make changes to the work                                         \e[38;5;17m#\e[39m" "#           - Make changes to the work                                         #"
+		log 1 "\e[38;5;17m#\e[39m           - Distribute the compiled code and/or source.                      \e[38;5;17m#\e[39m" "#           - Distribute the compiled code and/or source.                      #"
+		log 1 "\e[38;5;17m#\e[39m           - Incorporate the work into something that                         \e[38;5;17m#\e[39m" "#           - Incorporate the work into something that                         #"
+		log 1 "\e[38;5;17m#\e[39m             has a more restrictive license.                                  \e[38;5;17m#\e[39m" "#             has a more restrictive license.                                  #"
+		log 1 "\e[38;5;17m#\e[39m           - Use the work for private use                                     \e[38;5;17m#\e[39m" "#           - Use the work for private use                                     #"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
+		log 1 "\e[38;5;17m#\e[39m         You must:                                                            \e[38;5;17m#\e[39m" "#         You must:                                                            #"
+		log 1 "\e[38;5;17m#\e[39m           - Include the copyright notice in all                              \e[38;5;17m#\e[39m" "#           - Include the copyright notice in all                              #"
+		log 1 "\e[38;5;17m#\e[39m             copies or substantial uses of the work                           \e[38;5;17m#\e[39m" "#             copies or substantial uses of the work                           #"
+		log 1 "\e[38;5;17m#\e[39m           - Include the license notice in all copies                         \e[38;5;17m#\e[39m" "#           - Include the license notice in all copies                         #"
+		log 1 "\e[38;5;17m#\e[39m             or substantial uses of the work                                  \e[38;5;17m#\e[39m" "#             or substantial uses of the work                                  #"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
+		log 1 "\e[38;5;17m#\e[39m         You cannot:                                                          \e[38;5;17m#\e[39m" "#         You cannot:                                                          #"
+		log 1 "\e[38;5;17m#\e[39m           - Hold the author liable. The work is                              \e[38;5;17m#\e[39m" "#           - Hold the author liable. The work is                              #"
+		log 1 "\e[38;5;17m#\e[39m             provided \"as is\".                                                \e[38;5;17m#\e[39m" "#             provided \"as is\".                                                #"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
+		log 1 "$(header 0)" "$(printf "%0.s#" {1..80})"
 		log 1
 	fi
 	if [[ $nivel_log -le 3 ]]; then
 		log 1 'CABECERA DEL PROGRAMA:' '@'
-		log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
-		log 3 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%72s" " ")#"
-		log 3 "\e[38;5;17m#\e[39m                   \e[48;5;17mSRPT, Paginación, FIFO, Memoria Continua,\e[0m                  \e[38;5;17m#" "#                SRPT, Paginación, FIFO, Memoria Continua,               #"
-		log 3 "\e[38;5;17m#\e[39m                  \e[48;5;17mFijas e iguales, Primer ajuste y Reubicable\e[0m                 \e[38;5;17m#" "#               Fijas e iguales, Primer ajuste y Reubicable              #"
-		log 3 "\e[38;5;17m#\e[38;5;20m            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            \e[38;5;17m#" "#         ――――――――――――――――――――――――――――――――――――――――――――――――――――――         #"
-		log 3 "\e[38;5;17m#\e[96m           Alumnos:                                                           \e[38;5;17m#" "#        Alumnos:                                                        #"
-		log 3 "\e[38;5;17m#\e[96m             - Gonzalez Roman, Diego                                          \e[38;5;17m#" "#          - Gonzalez Roman, Diego                                       #"
-		log 3 "\e[38;5;17m#\e[96m             - Díaz García, Rodrigo                                           \e[38;5;17m#" "#          - Díaz García, Rodrigo                                        #"
-		log 3 "\e[38;5;17m#\e[96m           Sistemas Operativos, Universidad de Burgos                         \e[38;5;17m#" "#        Sistemas Operativos, Universidad de Burgos                      #"
-		log 3 "\e[38;5;17m#\e[96m           Grado en ingeniería informática (2016-2017)                        \e[38;5;17m#" "#        Grado en ingeniería informática (2016-2017)                     #"
-		log 3 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%72s" " ")#"
-		log 3 "$(header 0)" "$(printf "%0.s#" {1..74})"
+		log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
+		log 3 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
+		log 3 "\e[38;5;17m#\e[39m                   \e[48;5;17mSRPT, Paginación, FIFO, Memoria Continua,\e[0m                  \e[38;5;17m#" "#                   SRPT, Paginación, FIFO, Memoria Continua,                  #"
+		log 3 "\e[38;5;17m#\e[39m                  \e[48;5;17mFijas e iguales, Primer ajuste y Reubicable\e[0m                 \e[38;5;17m#" "#                  Fijas e iguales, Primer ajuste y Reubicable                 #"
+		log 3 "\e[38;5;17m#\e[38;5;20m            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            \e[38;5;17m#" "#            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            #"
+		log 3 "\e[38;5;17m#\e[96m           Alumnos:                                                           \e[38;5;17m#" "#           Alumnos:                                                           #"
+		log 3 "\e[38;5;17m#\e[96m             - Gonzalez Roman, Diego                                          \e[38;5;17m#" "#             - Gonzalez Roman, Diego                                          #"
+		log 3 "\e[38;5;17m#\e[96m             - Díaz García, Rodrigo                                           \e[38;5;17m#" "#             - Díaz García, Rodrigo                                           #"
+		log 3 "\e[38;5;17m#\e[96m           Sistemas Operativos, Universidad de Burgos                         \e[38;5;17m#" "#           Sistemas Operativos, Universidad de Burgos                         #"
+		log 3 "\e[38;5;17m#\e[96m           Grado en ingeniería informática (2016-2017)                        \e[38;5;17m#" "#           Grado en ingeniería informática (2016-2017)                        #"
+		log 3 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
+		log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
 		log 3
 	fi
 }
@@ -1084,7 +1083,7 @@ declare mem_tamano_abreviacion mem_usada_abreviacion proc_count_abreviacion
 declare -ra proc_color_secuencia=(1,0 2,0 3,0 4,0 5,0 6,0 7,0 21,0 23,0 52,0 123,0 147,0 202,0 222,0 241,0) #fg,bg (88/256)
 
 log 9
-log 2 "$(header 0)" "$(printf "%0.s-" {1..74})"
+log 2 "$(header 0)" "$(printf "%0.s#" {1..80})"
 log 9 "EJECUCIÓN DE \e[44m${0}\e[49m EN \e[44m$(hostname)\e[49m CON FECHA \e[44m$(date)\e[49m" "EJECUCIÓN DE <${0}> EN <$(hostname)> CON FECHA <$(date)>"
 log 9
 
