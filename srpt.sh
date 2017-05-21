@@ -1,7 +1,7 @@
 #! /bin/bash
 #
 # Simula la ejeución de una serie de procesos en un algoritmo SRPT
-# AUTHOR: Rodrigo Díaz, Diego Gonzalez
+# AUTHOR: Rodrigo Díaz, Diego González
 # LICENSE: MIT
 
 #_____________________________________________
@@ -1031,7 +1031,7 @@ function cabeceraLog() {
 		log 1 "$(header 0)" "$(printf "%0.s#" {1..80})"
 		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
 		log 1 "\e[38;5;17m#\e[39m                                 MIT License                                  \e[38;5;17m#\e[39m" "#                                 MIT License                                  #"
-		log 1 "\e[38;5;17m#\e[39m                Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz               \e[38;5;17m#\e[39m" "#                Copyright (c) 2017 Diego Gonzalez, Rodrigo Díaz               #"
+		log 1 "\e[38;5;17m#\e[39m                Copyright (c) 2017 Diego González, Rodrigo Díaz               \e[38;5;17m#\e[39m" "#                Copyright (c) 2017 Diego González, Rodrigo Díaz               #"
 		log 1 "\e[38;5;17m#\e[39m            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            \e[38;5;17m#\e[39m" "#            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            #"
 		log 1 "\e[38;5;17m#\e[39m         You may:                                                             \e[38;5;17m#\e[39m" "#         You may:                                                             #"
 		log 1 "\e[38;5;17m#\e[39m           - Use the work commercially                                        \e[38;5;17m#\e[39m" "#           - Use the work commercially                                        #"
@@ -1062,7 +1062,7 @@ function cabeceraLog() {
 		log 3 "\e[38;5;17m#\e[39m                  \e[48;5;17mFijas e iguales, Primer ajuste y Reubicable\e[0m                 \e[38;5;17m#" "#                  Fijas e iguales, Primer ajuste y Reubicable                 #"
 		log 3 "\e[38;5;17m#\e[38;5;20m            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            \e[38;5;17m#" "#            ――――――――――――――――――――――――――――――――――――――――――――――――――――――            #"
 		log 3 "\e[38;5;17m#\e[96m           Alumnos:                                                           \e[38;5;17m#" "#           Alumnos:                                                           #"
-		log 3 "\e[38;5;17m#\e[96m             - Gonzalez Roman, Diego                                          \e[38;5;17m#" "#             - Gonzalez Roman, Diego                                          #"
+		log 3 "\e[38;5;17m#\e[96m             - González Román, Diego                                          \e[38;5;17m#" "#             - González Román, Diego                                          #"
 		log 3 "\e[38;5;17m#\e[96m             - Díaz García, Rodrigo                                           \e[38;5;17m#" "#             - Díaz García, Rodrigo                                           #"
 		log 3 "\e[38;5;17m#\e[96m           Sistemas Operativos, Universidad de Burgos                         \e[38;5;17m#" "#           Sistemas Operativos, Universidad de Burgos                         #"
 		log 3 "\e[38;5;17m#\e[96m           Grado en ingeniería informática (2016-2017)                        \e[38;5;17m#" "#           Grado en ingeniería informática (2016-2017)                        #"
