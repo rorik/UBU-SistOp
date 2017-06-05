@@ -1,5 +1,5 @@
 #! /bin/bash
-#
+
 # Simula la ejeución de una serie de procesos en un algoritmo SRPT
 # AUTHOR: Rodrigo Díaz, Diego González
 # LICENSE: MIT
@@ -36,7 +36,7 @@ function header() {
 	elif [[ $modo -eq 1 ]]; then
 		clear && clear
 		header 0
-		echo -e "\e[38;5;17m#\e[0m\e[48;5;17mSRPT, PAGINACIÓN FIFO, MEMORIA CONT, PARTES FIJAS IGUAL, 1er AJUSTE REUBICABLE\e[0m\e[38;5;17m#"
+		echo -e "\e[38;5;17m#\e[0m       \e[48;5;17m ALGORITMO SRPT, PAGINACIÓN FIFO, MEMORIA CONTINUA Y REUBICABLE\e[0m        \e[38;5;17m#"
 	else
 		header 1
 		printf "\e[38;5;17m#\e[0m      \e[48;5;17mMemoria: "
@@ -83,16 +83,20 @@ function header() {
 #		Nada
 #######################################
 function pedirDatos() {
+	if [[ -z $proc_color_secuencia ]]; then
+		proc_color_secuencia=(1,0 2,0 3,0 4,0 5,0 6,0 7,0 23,0 88,0 92,0 123,0 147,0 202,0 222,0 243,0)
+	fi
+
 	if [[ -z $mem_tamano ]]; then #si el tamaño de memoria nulo
 		until [[ $mem_tamano =~ ^[0-9]+$ ]] && [[ ! $mem_tamano -eq 0 ]]; do #hasta el tamaño de memoria empiece entre 0 y 9 Y sea diferente a 0 hacer...
 			printf "\e[1A%80s\r" " " #imprimir 80 espacios en color 1A
-			read -p "Tamaño (en bloques) de la memoria: " mem_tamano #te pide que escribas algo y eso eso va a ser el tamaño de memoria
+			read -p "Tamaño (en marcos) de la memoria: " mem_tamano #te pide que escribas algo y eso eso va a ser el tamaño de memoria
 			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r" #te muestra en pantalla el texto y vuelve a la linea anterior
 		done
 		printf "%80s\n" " "
 	fi
 
-	if [[ -z "$proc_pagina_tamano" ]]; then
+	if [[ -z $proc_pagina_tamano ]]; then
 		until [[ $proc_pagina_tamano =~ ^[0-9]+$ ]] && [[ ! $proc_pagina_tamano -eq 0 ]]; do
 			printf "\e[1A%80s\r" " "
 			read -p "Direcciones por página: " proc_pagina_tamano
@@ -101,7 +105,7 @@ function pedirDatos() {
 		printf "%80s\n" " "
 	fi
 
-	if [[ -z "$proc_count" ]]; then
+	if [[ -z $proc_count ]]; then
 		until [[ $proc_count =~ ^[0-9]+$ ]] && [[ ! $proc_count -eq 0 ]]; do
 			printf "\e[1A%80s\r" " "
 			read -p "Número de procesos: " proc_count
@@ -110,11 +114,11 @@ function pedirDatos() {
 		printf "%80s\n" " "
 	fi
 
-	if [[ -z "$proc_id" ]]; then
+	if [[ -z $proc_id ]]; then
 		for i in $(seq 0 $((proc_count - 1))); do
 			until [[ ${proc_tamano[$i]} =~ ^[0-9]+$ ]] && [[ ! ${proc_tamano[$i]} -eq 0 ]]; do
 				printf "\e[1A%80s\r" " "
-				read -p "[P${i}] Bloques en memoria: " proc_tamano[$i]
+				read -p "[P${i}] Marcos de página: " proc_tamano[$i]
 				printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 			done
 			printf "%80s\n" " "
@@ -139,10 +143,9 @@ function pedirDatos() {
 			fi
 			proc_tiempo_ejecucion[$i]=0
 			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #Asigna el tiempo rastante al numero de paginas
-			log 3 "Proceso \e[44m${i}\e[49m, con ID \e[44m${proc_id[$i]}\e[49m, Secuencia \e[44m${proc_paginas[$i]}\e[49m, Bloques \e[44m${proc_tamano[$i]}\e[49m, Llegada \e[44m${proc_tiempo_llegada[$i]}" "Proceso <${i}>, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
+			log 3 "Proceso \e[44m${i}\e[49m, con ID \e[44m${proc_id[$i]}\e[49m, Secuencia \e[44m${proc_paginas[$i]}\e[49m, Marcos \e[44m${proc_tamano[$i]}\e[49m, Llegada \e[44m${proc_tiempo_llegada[$i]}" "Proceso <${i}>, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Marcos <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 		done
 	fi
-
 	tiempo_final="$(ultimoTiempo)"
 }
 
@@ -174,13 +177,13 @@ function pedirDatos() {
 #				5		mínimo
 #				9		ejecición
 #				10	deshabilitado
-#		-m	BLOQUES
-#			Tamaño de memoria en bloques
+#		-m	MARCOS
+#			Tamaño de memoria en marcos
 #		-p	NÚMERO
 #			Número de procesos
 #		-s
 #			Deshabilita salida por pantalla
-#		-u TIEMPO
+#		-u	TIEMPO
 #			Deshabilita modo debug en TIEMPO
 #	Devuelve:
 #		Nada
@@ -333,7 +336,7 @@ function leerArchivo() {
 			proc_paginas[$i]=$(convertirDireccion ${proc_paginas[$i]})
 			proc_tiempo_ejecucion[$i]=0
 			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #cuenta el numero de paginas y lo asigna al tiempo de ejecucion  restante
-			log 3 "Proceso \e[44m${i}\e[49m, con ID \e[44m${proc_id[$i]}\e[49m, Secuencia \e[44m${proc_paginas[$i]}\e[49m, Bloques \e[44m${proc_tamano[$i]}\e[49m, Llegada \e[44m${proc_tiempo_llegada[$i]}\e[49m" "Proceso <${i}>, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Bloques <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
+			log 3 "Proceso \e[44m${i}\e[49m, con ID \e[44m${proc_id[$i]}\e[49m, Secuencia \e[44m${proc_paginas[$i]}\e[49m, Marcos \e[44m${proc_tamano[$i]}\e[49m, Llegada \e[44m${proc_tiempo_llegada[$i]}\e[49m" "Proceso <${i}>, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Marcos <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 			((i++))
 		else
 			if [[ $line == +* ]]; then
@@ -342,11 +345,15 @@ function leerArchivo() {
 					"MEMORIA")
 						mem_tamano=$(echo $line | cut -d ':' -f2)
 						log 0 "de memoria \e[44m$mem_tamano" "de memoria <${mem_tamano}>"
-						log 3 "Configuración, bloques de memoria \e[44m$mem_tamano" "Configuración, bloques de memoria <${mem_tamano}>";;
+						log 3 "Configuración, marcos de memoria \e[44m$mem_tamano" "Configuración, marcos de memoria <${mem_tamano}>";;
 					"DIRECCIONES")
 						proc_pagina_tamano=$(echo $line | cut -d ':' -f2)
 						log 0 "de página \e[44m$proc_pagina_tamano" "de página <${proc_pagina_tamano}>"
 						log 3 "Configuración, tamaño de pagina \e[44m$proc_pagina_tamano" "Configuración, tamaño de pagina <${proc_pagina_tamano}>";;
+					"COLORES")
+						IFS=';' read -r -a proc_color_secuencia <<< "$(echo $line | cut -d ':' -f2)"
+						log 0 "de color \e[44m$proc_color_secuencia" "de página <${proc_color_secuencia}>"
+						log 3 "Configuración, colores \e[44m$proc_color_secuencia" "Configuración, colores <${proc_color_secuencia}>";;
 					*)
 						echo 'CONFIGURACIÓN EN FICHERO NO VÁLIDA'
 						log 9 "\e[91m!!!\e[39m Configuración en archivo no válida \e[91m!!!\e[39m" "!!! Configuración en archivo no válida !!!"
@@ -396,37 +403,41 @@ function convertirDireccion() {
 #		proc_tiempo_ejecucion_restante
 #		swp_proc_id
 #		swp_proc_index
+#		tiempo
 #	Argumentos:
 #		Nada
 #	Devuelve:
 #		Nada
 #######################################
 function actualizarInterfaz() {
-	local -i i
+	local -i i index
+	local estado
 	header 2
-	printf "\e[38;5;17m#\e[39m     \e[4m%s\e[0m     \e[38;5;18m#\e[39m     \e[4m%s\e[0m     \e[38;5;18m~\e[39m   \e[4m%s\e[0m   \e[38;5;18m~\e[39m     \e[4m%s\e[0m      \e[38;5;17m#\e[39m\n" "SWAP" "ID" "T. RESTANTE" "POSICIONES EN MEMORIA" #crea la cabecera de la tabla
-	for i in {0..10}; do
-		echo -ne '\e[38;5;17m#\e[39m'
-		if [[ ! -z ${swp_proc_id[$i]} ]]; then
-			echo -ne "\e[${proc_color[${swp_proc_index[$i]}]}m"
-			if [[ ${proc_tamano[${swp_proc_index[$i]}]} -lt 10 ]]; then
-				printf "%9s\e[0m (\e[${proc_color[${swp_proc_index[$i]}]}m%d\e[0m)" "${swp_proc_id[$i]:0:9}" "${proc_tamano[${swp_proc_index[$i]}]}"
-			elif [[ ${proc_tamano[${swp_proc_index[$i]}]} -lt 100 ]]; then
-				printf "%8s (\e[${proc_color[${swp_proc_index[$i]}]}m%d\e[0m)" "${swp_proc_id[$i]:0:8}" "${proc_tamano[${swp_proc_index[$i]}]}"
-			else
-				printf "%7s (\e[${proc_color[${swp_proc_index[$i]}]}m>99\e[0m)" "${swp_proc_id[$i]:0:7}"
-			fi
+	echo -e "\e[38;5;17m#\e[39m      ID    \e[38;5;18m#\e[39m T.Rest \e[38;5;19m#\e[39m   Estado   \e[38;5;21m#\e[39m T.LLeg \e[38;5;21m#\e[39m T.Ej \e[38;5;20m#\e[39m T.Esp \e[38;5;19m#\e[39m T.Rspt \e[38;5;18m#\e[39m Posición \e[38;5;17m#\e[39m"
+	for ((i=0; i<${#mem_proc_id[@]}; i++)); do
+		index=${mem_proc_index[$i]}
+		if [[ $i -eq $mem_siguiente_ejecucion ]]; then
+			estado="95mEJECUCION "
 		else
-			printf "%13s" " "
+			estado="92mEN MEMORIA"
 		fi
-		echo -ne ' \e[38;5;18m#\e[39m '
-		if [[ ! -z ${mem_proc_index[$i]} ]]; then
-			printf "\e[${proc_color[${mem_proc_index[$i]}]}m%10s\e[0m \e[38;5;18m~\e[39m %5s\e[${proc_color[${mem_proc_index[$i]}]}m%4d\e[0m%6s \e[38;5;18m~\e[39m \e[${proc_color[${mem_proc_index[$i]}]}m%-30s\e[0m " "${mem_proc_id[$i]:0:10}" " " "${proc_tiempo_ejecucion_restante[${mem_proc_index[$i]}]}" " " "${proc_posicion[${mem_proc_index[$i]}]:0:30}" #pone los datos en la tabla
-		else
-			printf "%10s \e[38;5;18m~\e[39m %15s \e[38;5;18m~\e[39m %31s" " " " " " " #si esta vacio solo pone el swap
-		fi
-		echo -ne '\e[0;38;5;17m#\e[39m\n'
+		printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#proc_id[index]}+10)/2))" "${proc_id[$index]}" "$((5-${#proc_id[index]}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "$estado" "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)"
 	done
+	for ((i=0; i<${#swp_proc_id[@]}; i++)); do
+		index=${swp_proc_index[$i]}
+		printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#proc_id[index]}+10)/2))" "${proc_id[$index]}" "$((5-${#proc_id[index]}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "93mESPERANDO " "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)"
+	done
+	for ((i=0; i<${#proc_id[@]}; i++)); do
+		index=$i
+		if [[ ${proc_tiempo_llegada[$index]} -gt $tiempo ]]; then
+			printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#proc_id[index]}+10)/2))" "${proc_id[$index]}" "$((5-${#proc_id[index]}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "91mNO LLEGADO" "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)"
+		fi
+	done
+	for ((i=0; i<${#out_proc_index[@]}; i++)); do
+		index=${out_proc_index[$i]}
+		printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#proc_id[index]}+10)/2))" "${proc_id[$index]}" "$((5-${#proc_id[index]}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "96mFINALIZADO" "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)"
+	done
+
 	header 0
 	echo -ne '\e[38;5;17m#\e[39m '
 	for i in {0..24}; do
@@ -448,6 +459,48 @@ function actualizarInterfaz() {
 		fi
 	done
 	echo -ne '  \e[38;5;17m#\e[39m\n'
+	header 0
+
+	echo -ne '\e[38;5;17m#\e[39m  '
+	for ((i=(tiempo-28); i<=(tiempo); i++)); do
+			if [[ $i -ge 0 ]] && [[ ${linea_tiempo[$i]} -ne ${linea_tiempo[((i-1))]} || $i -eq 0 ]]; then
+				echo -ne "| "
+			elif [[ $i -gt 0 ]] && [[ ${linea_tiempo[((i-1))]} -ne ${linea_tiempo[((i-2))]} && ${linea_tiempo[$i]} -eq ${linea_tiempo[((i-1))]} || $i -eq 1 ]]; then
+				if [[ $i -ne $tiempo ]]; then
+					printf "%-4d" $((i-1))
+					((i++))
+				else
+					((i--))
+					printf "%-2d" ${i:0:2}
+					((i++))
+				fi
+			else
+				echo -ne "  "
+			fi
+	done
+	printf "|%-7s tiempo   \e[38;5;17m#\e[39m\n" "$tiempo"
+
+	echo -ne '\e[38;5;17m#\e[39m  '
+	for ((i=(tiempo-28); i<=(tiempo); i++)); do
+			if [[ $i -ge 0 ]]; then
+				echo -ne "\e[${proc_color[${linea_tiempo[$i]}]}m"
+			fi
+			echo -ne '##\e[0m'
+	done
+	for i in {0..7}; do echo -ne '##'; done
+	echo -ne '  \e[38;5;17m#\e[39m\n'
+
+	echo -ne '\e[38;5;17m#\e[39m  '
+	for ((i=(tiempo-28); i<=(tiempo); i++)); do
+			if [[ $i -ge 0 ]] && [[ ${linea_tiempo[$i]} -ne ${linea_tiempo[((i-1))]} || $i -eq 0 ]]; then
+				echo -ne "| "
+			elif [[ $i -gt 0 ]] && [[ ${linea_tiempo[((i-1))]} -ne ${linea_tiempo[((i-2))]} && ${linea_tiempo[$i]} -eq ${linea_tiempo[((i-1))]} || $i -eq 1 ]]; then
+				printf "%-2d" ${linea_tiempo[$i]:0:2}
+			else
+				echo -ne "  "
+			fi
+	done
+	printf "%7s proceso   \e[38;5;17m#\e[39m\n" " "
 	header 0
 }
 
@@ -481,12 +534,14 @@ function actualizarInterfaz() {
 #######################################
 function step() {
 	local -i i
+	local tecla
 	if [[ $tiempo -le $tiempo_final ]]; then poblarSwap; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then poblarMemoria; fi
 	if [[ ${#mem_proc_id[@]} -eq 0 ]]; then
 		if [[ ${#swp_proc_id[@]} -eq 0 ]] && [[ $tiempo -gt $tiempo_final ]]; then finalizarEjecucion 0; fi
 		if [[ ${proc_tamano[${swp_proc_index[0]}]} -gt $mem_tamano ]]; then finalizarEjecucion 20; fi
 	else ejecucion; fi
+	calcularEjecucion
 	if [[ ! -z $tiempo_break ]] && [[ $((tiempo + 1)) -eq $tiempo_break ]]; then
 		modo_debug=1
 		if [[ ! -z $modo_silencio ]]; then
@@ -511,16 +566,14 @@ function step() {
 			if [[ ! -z $evento ]]; then
 				stepLog
 				actualizarInterfaz
-				echo ${evento::-2}
-				unset evento
-				read -p "Presiona cualquier tecla para continuar " -n 1 -r
+				echo -e ${evento::-2}
+				read -p "Presiona cualquier tecla para continuar " -n 1 -r tecla
 			fi
 		else
 			stepLog
 			actualizarInterfaz
-			echo ${evento::-2}
-			unset evento
-			read -p "Presiona cualquier tecla para continuar " -n 1 -r
+			echo -e ${evento::-2}
+			read -p "Presiona cualquier tecla para continuar " -n 1 -r tecla
 		fi
 	else
 		if [[ ! -z $evento ]]; then
@@ -529,12 +582,12 @@ function step() {
 			log 3
 			evento_log=()
 			evento_log_NoEsc=()
-			unset evento
 		elif [[ ! -z $modo_debug ]]; then
 			stepLog
 			log 3
 		fi
 	fi
+	unset evento
 	((tiempo++))
 }
 
@@ -676,7 +729,7 @@ function poblarSwap() {
 	local -i i
 	for (( i=0 ; i<${#proc_id[@]}; i++ )); do
 		if [[ ${proc_tiempo_llegada[$i]} -eq $tiempo ]]; then
-			evento+="${proc_id[$i]} > SWAP, "
+			evento+="\e[${proc_color[$i]}m${proc_id[$i]}\e[0m > \e[93mespera\e[0m, "
 			evento_log+=("\e[${proc_color[${i}]}m${proc_id[$i]}\e[0m entra en swap en instante \e[44m$tiempo")
 			evento_log_NoEsc+=("${proc_id[$i]} entra en swap en instante <${tiempo}>")
 			swp_proc_id+=("${proc_id[$i]}")
@@ -727,7 +780,7 @@ function poblarMemoria() {
 					fi
 				done
 				if [[ $espacio_valido -eq 1 ]]; then #si el espacio es valido entonces
-					evento+="${swp_proc_id[0]} > MEM, "
+					evento+="\e[${proc_color[${swp_proc_index[0]}]}m${swp_proc_id[0]}\e[0m > \e[92men memoria\e[0m, "
 					evento_log+=("\e[${proc_color[${swp_proc_index[0]}]}m${swp_proc_id[0]}\e[0m entra en memoria en instante \e[44m$tiempo\e[0m, despues de esperar \e[44m$((tiempo - proc_tiempo_llegada[swp_proc_index[0]]))\e[0m")
 					evento_log_NoEsc+=("${swp_proc_id[0]} entra en memoria en instante <${tiempo}>, despues de esperar <$((tiempo - proc_tiempo_llegada[swp_proc_index[0]]))>")
 					mem_proc_id+=("${swp_proc_id[0]}") #guarda la id
@@ -749,7 +802,7 @@ function poblarMemoria() {
 		done
 	fi
 	if [[ ! -z $swp_proc_id ]] && [[ ${proc_tamano[${swp_proc_index[0]}]} -le $((mem_tamano - mem_usada)) ]]; then
-		defragmentarMemoria
+		desfragmentarMemoria
 		poblarMemoria
 	fi
 	if [[ -z $modo_silencio ]]; then
@@ -795,9 +848,9 @@ function eliminarMemoria() {
 	i=0
 	for index in ${mem_proc_index[@]}; do #por cada indice en memoria hacer...
 		if [[ $index_objetivo -eq $index ]]; then #si lo encuentras entonces...
-			evento+="${mem_proc_id[$i]} > OUT, "
-			proc_tiempo_salida[$index]=$tiempo
-			proc_tiempo_espera[$index]=$((1 + tiempo - proc_tiempo_llegada[index] - proc_tiempo_ejecucion[index]))
+			evento+="\e[${proc_color[${mem_proc_index[$i]}]}m${mem_proc_id[$i]}\e[0m > \e[96mfinaliza\e[0m, "
+			proc_tiempo_salida[$index]=$tiempo # <!TODO!>
+			out_proc_index+=("$index")
 			evento_log+=("\e[${proc_color[${index}]}m${mem_proc_id[$i]}\e[0m termina en instante \e[44m$tiempo\e[0m, con tiempo de espera \e[44m${proc_tiempo_espera[$index]}\e[0m y tiempo de ejecución \e[44m${proc_tiempo_ejecucion[${index}]}")
 			evento_log_NoEsc+=("${mem_proc_id[$i]} sale de memoria en <${tiempo}>, con tiempo de espera <${proc_tiempo_espera[$index]}> y tiempo de ejecución <${proc_tiempo_ejecucion[${index}]}>")
 			unset mem_proc_index[$i] #saca el indice de memoria
@@ -805,6 +858,7 @@ function eliminarMemoria() {
 			for pos in ${proc_posicion[$index]}; do #por cada posicion del proceso hacer...
 				unset mem_paginas_secuencia[$pos] #saca las paginas
 			done
+			unset proc_posicion[$index]
 			unset mem_proc_tamano[$i] #saca el proceso de tamaño de la memoria
 			mem_proc_index=( "${mem_proc_index[@]}" ) #desfragmenta la lista
 			mem_proc_id=( "${mem_proc_id[@]}" )
@@ -832,7 +886,7 @@ function eliminarMemoria() {
 #	Devuelve:
 #		Nada
 #######################################
-function defragmentarMemoria() {
+function desfragmentarMemoria() {
 	local -i i j
 	until [[ $((pivot_final + 1)) -eq $mem_usada ]]; do
 		local -i pivot=-1 pivot_final=0 count=0
@@ -858,7 +912,7 @@ function defragmentarMemoria() {
 		fi
 	done
 	actualizarPosiciones
-	evento+="DEFRAG, "
+	evento+="\e[94mDESFRAGMENTACIÓN\e[0m, "
 }
 
 #######################################
@@ -880,15 +934,47 @@ function ejecucion() {
 			min_i=$index
 			min_mem_index=$i
 		fi
-		((i++))
+		((++i))
+		((++proc_tiempo_espera[index]))
+		((++proc_tiempo_respuesta[index]))
+	done
+	for index in ${swp_proc_index[@]}; do
+		((++proc_tiempo_espera[index]))
+		((++proc_tiempo_respuesta[index]))
 	done
 	((--proc_tiempo_ejecucion_restante[min_i]))
 	((++proc_tiempo_ejecucion[min_i]))
+	((--proc_tiempo_espera[min_i]))
+	linea_tiempo[$tiempo]=$min_i
 	if [[ ${proc_tiempo_ejecucion_restante[$min_i]} -eq 0 ]]; then
 		eliminarMemoria $min_i $min_mem_index
 	else
 		actualizarPaginas $min_i
 	fi
+}
+
+#######################################
+#	SRPT de procesos en memoria
+#	Globales:
+#		mem_proc_index
+#		proc_tiempo_ejecucion
+#		proc_tiempo_ejecucion_restante
+#		mem_siguiente_ejecucion
+#	Argumentos:
+#		Nada
+#	Devuelve:
+#		Nada
+#######################################
+function calcularEjecucion() {
+	local -i min=${proc_tiempo_ejecucion_restante[${mem_proc_index[0]}]} min_mem_index=0 i=0
+	for index in ${mem_proc_index[@]}; do #por cada indice de la memoria hacer...
+		if [[ ${proc_tiempo_ejecucion_restante[$index]} -lt $min ]]; then #si el tiempo de ejecucion es el menor
+			min=${proc_tiempo_ejecucion_restante[$index]} #guardalo como nuevo minimo
+			min_mem_index=$i
+		fi
+		((++i))
+	done
+	mem_siguiente_ejecucion=$min_mem_index
 }
 
 #######################################
@@ -1121,17 +1207,16 @@ function cabeceraLog() {
 #_____________________________________________
 
 SECONDS=0
-declare -a proc_id proc_tamano proc_paginas proc_tiempo_llegada proc_tiempo_salida proc_tiempo_ejecucion proc_tiempo_ejecucion_restante proc_tiempo_espera proc_posicion mem_paginas mem_proc_id mem_proc_index mem_proc_tamano swp_proc_id swp_proc_index
-declare -i proc_count mem_tamano mem_usada=0 tiempo=-1 mem_tamano_redondeado mem_usada_redondeado proc_count_redondeado nivel_log=3
-declare mem_tamano_abreviacion mem_usada_abreviacion proc_count_abreviacion evento evento_log evento_log_NoEsc
-declare -ra proc_color_secuencia=(1,0 2,0 3,0 4,0 5,0 6,0 7,0 23,0 88,0 92,0 123,0 147,0 202,0 222,0 243,0) #fg,bg (88/256)
+declare -a proc_id proc_tamano proc_paginas proc_tiempo_llegada proc_tiempo_salida proc_tiempo_ejecucion proc_tiempo_ejecucion_restante proc_tiempo_espera proc_tiempo_respuesta proc_posicion mem_paginas mem_proc_id mem_proc_index mem_proc_tamano swp_proc_id swp_proc_index out_proc_index proc_color_secuencia linea_tiempo
+declare -i proc_count mem_tamano mem_usada=0 mem_siguiente_ejecucion tiempo=-1 mem_tamano_redondeado mem_usada_redondeado proc_count_redondeado nivel_log=3
+declare mem_tamano_abreviacion mem_usada_abreviacion proc_count_abreviacion evento evento_log evento_log_NoEsc filename
 
 log 9
 log 2 "$(header 0)" "$(printf "%0.s#" {1..80})"
 log 9 "EJECUCIÓN DE \e[44m${0}\e[49m EN \e[44m$(hostname)\e[49m CON FECHA \e[44m$(date)\e[49m" "EJECUCIÓN DE <${0}> EN <$(hostname)> CON FECHA <$(date)>"
 log 9
 
-if [[ ! $# -eq 0 ]]; then
+if [[ $# -gt 0 ]]; then
 	log 5 'Argumentos introducidos, obteniendo información:' '@'
 	leerArgs "$@"
 fi
