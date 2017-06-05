@@ -75,8 +75,10 @@ Se utilizan para establecer configuraciones de ejecución.
 ```
   +MEMORIA: 300
   +DIRECCIONES: 125
+  +COLORES: 14,43 ; 54,8 ; 0,255 ; 32,32 ; 81,0
 ```
-Empiezan por un '+', seguido por el nombre de la configuración ('MEMORIA' o 'DIRECCIONES'), dos puntos ':', y por último el valor a ser establecido.
+Empiezan por un '+', seguido por el nombre de la configuración ('MEMORIA', 'DIRECCIONES' o 'COLORES'), dos puntos ':', y por último el valor a ser establecido.
+La configuración de color consiste de dos valores separados por comas para cada proceso (múltiples procesos separados por punto y coma), el primer valor es el color del texto y el segundo el del fondo.
 #### Lineas de procesos:
 Sirven para configurar un nuevo proceso.
 ```
