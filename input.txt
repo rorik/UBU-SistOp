@@ -1,5 +1,6 @@
 +MEMORIA: 25 # Número de bloques de memoria
 +DIRECCIONES: 100 # Número de direcciones por página
++COLORES: 1,0 ; 2,0 ; 3,0 ; 4,0 ; 5,0 ; 6,0 ; 7,0 ; 23,0 ; 88,0 ; 92,0 ; 123,0 ; 147,0 ; 202,0 ; 222,0 ; 243,0 # Foreground, Background
 
 # Marcos de Página ; Direcciones Página ; T. Llegada ; (OPCIONAL) ID #
 
