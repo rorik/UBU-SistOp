@@ -1144,7 +1144,7 @@ function finalizarEjecucion() {
 		log 5 "$(printf "%7s%s%8s-  %s  -  %s  -   %s  -    %s" " " "ID" " " "LLEGADA" "SALIDA" "REPUESTA" "ESPERA")" '@'
 		for ((i=0; i<proc_count; i++)); do
 			id=${proc_id[$i]:0:15}
-			log 5 "$(printf "\e[%sm%*s\e[0m%*s - %5d     -  %5d   - %7d     - %7d" "${proc_color[$i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[$i]}" "${proc_tiempo_salida[$i]}" "${proc_tiempo_respuesta[$i]}" "${proc_tiempo_espera[$i]}")" "$(printf "%*s%*s - %5d     -  %5d   - %7d     - %7d""$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[$i]}" "${proc_tiempo_salida[$i]}" "${proc_tiempo_respuesta[$i]}" "${proc_tiempo_espera[$i]}")"
+			log 5 "$(printf "\e[%sm%*s\e[0m%*s - %5d     -  %5d   - %7d     - %7d" "${proc_color[$i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[$i]}" "${proc_tiempo_salida[$i]}" "${proc_tiempo_respuesta[$i]}" "${proc_tiempo_espera[$i]}")" "$(printf "%*s%*s - %5d     -  %5d   - %7d     - %7d" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[$i]}" "${proc_tiempo_salida[$i]}" "${proc_tiempo_respuesta[$i]}" "${proc_tiempo_espera[$i]}")"
 			espera_total+=${proc_tiempo_espera[$i]}
 		done
 		log 5
