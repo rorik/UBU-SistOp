@@ -1,8 +1,10 @@
 #! /bin/bash
-
 # Simula la ejeución de una serie de procesos en un algoritmo SRPT
 # AUTHOR: Rodrigo Díaz, Diego González
 # LICENSE: MIT
+
+if ! [[ (${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -eq 3 && ${BASH_VERSINFO[2]} -ge 48) || (${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -gt 3) || ${BASH_VERSINFO[0]} -gt 4 ]]; then read -n 1 -p "VERSIÓN DE BASH < 4.3.48, la ejecución en esta versión no ha sido testeada, ¿continuar (s/n)? "; [[ ! $REPLY =~ ^[SsYy] ]] && echo && exit 90; fi
+if [[ $(tput cols) -lt 90 ]]; then read -n 1 -p "El programa esta diseñado para funcionar con una ventana de al menos 90 caracteres de ancho, ¿continuar (s/n)? "; [[ ! $REPLY =~ ^[SsYy] ]] && echo && exit 91; fi
 
 #_____________________________________________
 # COMIENZO DE FUNCIONES
@@ -144,7 +146,8 @@ function pedirDatos() {
 				proc_color[$i]="48;5;$(shuf -i 0-256 -n 1);38;5;$(shuf -i 0-256 -n 1)"
 			fi
 			proc_tiempo_ejecucion[$i]=0
-			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #Asigna el tiempo rastante al numero de paginas
+			proc_tiempo_ejecucion_esperado[$i]=$(echo ${proc_paginas[i]} | tr ',' ' ' | wc -w) #Asigna el tiempo rastante al numero de paginas
+			proc_tiempo_ejecucion_restante[$i]=${proc_tiempo_ejecucion_esperado[i]}
 			log 3 "Proceso \e[44m${i}\e[49m, con ID \e[44m${proc_id[$i]}\e[49m, Secuencia \e[44m${proc_paginas[$i]}\e[49m, Marcos \e[44m${proc_tamano[$i]}\e[49m, Llegada \e[44m${proc_tiempo_llegada[$i]}" "Proceso <${i}>, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Marcos <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 		done
 	fi
@@ -337,8 +340,8 @@ function leerArchivo() {
 			fi
 			proc_estado[$i]=1
 			proc_paginas[$i]=$(convertirDireccion ${proc_direcciones[$i]})
-			proc_tiempo_ejecucion[$i]=0
-			proc_tiempo_ejecucion_restante[$i]=$(echo ${proc_paginas[$i]} | tr ',' ' ' | wc -w) #cuenta el numero de paginas y lo asigna al tiempo de ejecucion  restante
+			proc_tiempo_ejecucion_esperado[$i]=$(echo ${proc_paginas[i]} | tr ',' ' ' | wc -w)
+			proc_tiempo_ejecucion_restante[$i]=${proc_tiempo_ejecucion_esperado[i]}
 			log 3 "Proceso \e[44m${i}\e[49m, con ID \e[44m${proc_id[$i]}\e[49m, Secuencia \e[44m${proc_paginas[$i]}\e[49m, Marcos \e[44m${proc_tamano[$i]}\e[49m, Llegada \e[44m${proc_tiempo_llegada[$i]}\e[49m" "Proceso <${i}>, con ID <${proc_id[$i]}>, Secuencia <${proc_paginas[$i]}>, Marcos <${proc_tamano[$i]}>, Llegada <${proc_tiempo_llegada[$i]}>"
 			((i++))
 		else
@@ -417,33 +420,41 @@ function convertirDireccion() {
 #######################################
 function actualizarInterfaz() {
 	local -i i j ultimo_cambio=0 offset
-	local id estado paginas_previas paginas_actuales paginas_futuras
+	local -a paginas
+	local id estado estado_color
 	header 2
-	echo -e "\e[38;5;17m#\e[39m     ID     \e[38;5;18m#\e[39m Mrcs \e[38;5;19m#\e[39m     Paginas    \e[38;5;20m#\e[39m Estd \e[38;5;21m#\e[39m  T.Rst \e[38;5;21m#\e[39m T.LL \e[38;5;21m#\e[39m T.Ej \e[38;5;19m#\e[39m T.Esp \e[38;5;18m#\e[39m T.Rsp \e[38;5;18m#\e[39m Pos \e[38;5;17m#\e[39m"
+	echo -e "\e[38;5;17m#\e[39m     ID     T.LL  T.Ej  Mrcos  Estd   T.Rst T.CPU T.Esp T.Rsp  Pos       Paginas        \e[38;5;17m#\e[39m"
 	for ((i=0; i<${#proc_id[@]}; i++)); do
 		id=${proc_id[$i]:0:9}
 		if [[ ${proc_estado[i]} -ge 16 ]]; then
-			estado='96mFINL'
+			estado='FINL'
+			estado_color='96'
 		elif [[ ${proc_estado[i]} -ge 8 ]]; then
-			estado='95mEJEC'
+			estado='EJEC'
+			estado_color='95'
 		elif [[ ${proc_estado[i]} -ge 4 ]]; then
-			estado='92mMEM '
+			estado='MEM '
+			estado_color='92'
 		elif [[ ${proc_estado[i]} -ge 2 ]]; then
-			estado='93mESPR'
+			estado='ESPR'
+			estado_color='93'
 		else
-		 	estado='91mNOLL'
+			estado='NOLL'
+			estado_color='91'
 		fi
-		paginas_previas=''; paginas_actuales=''; paginas_futuras=''
-		if [[ ${proc_tiempo_ejecucion[i]} -gt 0 ]]; then
-			paginas_actuales=$(echo ${proc_paginas[i]} | cut -d ',' -f ${proc_tiempo_ejecucion[i]})
-			if [[ ${proc_tiempo_ejecucion[i]} -eq 2 ]]; then
-				paginas_previas="$(printf "   %2d" "$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]-1)))")"
-			elif [[ ${proc_tiempo_ejecucion[i]} -gt 2 ]]; then
-				paginas_previas="$(printf "%2d %2d" "$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]-2)))" "$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]-1)))")"
+
+		for ((j=-3; j<=3; j++)); do
+			if [[ $j -ge 0 ]]; then
+				paginas[$j]=''
+				paginas[$j]=$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+j+1)))
+			elif [[ ${proc_tiempo_ejecucion[i]} -ge $((-j)) ]]; then
+				paginas[$((9-j))]=$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+j+1)))
+			else
+				paginas[$((9-j))]=''
 			fi
-		fi
-		paginas_futuras="$(printf "%2d %2d" "$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+1)))" "$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+2)))")"
-		printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%3d\e[0m  \e[38;5;19m#\e[39m \e[%sm%5s\e[0m \e[4;%sm%2s\e[24m \e[%sm%5s\e[0m \e[38;5;20m#\e[39m \e[%s\e[0m \e[38;5;21m#\e[39m \e[%sm%4d\e[0m   \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;19m#\e[39m \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m \e[%sm%3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[i]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[i]}" "${proc_tamano[i]}" "${proc_color[i]}" "$paginas_previas" "${proc_color[i]}" "$paginas_actuales" "${proc_color[i]}" "$paginas_futuras" "$estado" "${proc_color[i]}" "${proc_tiempo_ejecucion_restante[i]}" "${proc_color[i]}" "${proc_tiempo_llegada[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_color[i]}" "${proc_tiempo_espera[i]}" "${proc_color[i]}" "${proc_tiempo_respuesta[i]}" "${proc_color[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)"
+		done
+
+		printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m    \e[%sm%s\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m  \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[4;%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[i]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[i]}" "${proc_tiempo_llegada[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion_esperado[i]}" "${proc_color[i]}" "${proc_tamano[i]}" "$estado_color" "$estado" "${proc_color[i]}" "${proc_tiempo_ejecucion_restante[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_color[i]}" "${proc_tiempo_espera[i]}" "${proc_color[i]}" "${proc_tiempo_respuesta[i]}" "${proc_color[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)" "${proc_color[i]}" "${paginas[12]}" "${proc_color[i]}" "${paginas[11]}" "${proc_color[i]}" "${paginas[10]}" "${proc_color[i]}" "${paginas[0]}" "${proc_color[i]}" "${paginas[1]}" "${proc_color[i]}" "${paginas[2]}" "${proc_color[i]}" "${paginas[3]}"
 	done
 
 	header 0
@@ -539,18 +550,18 @@ function actualizarInterfaz() {
 				ultimo_cambio=0
 			fi
 			if [[ $ultimo_cambio -eq 0 ]]; then
-				echo -ne '| '
+				echo -ne "\e[${proc_color[linea_tiempo[i]]}m| "
 			elif [[ $((ultimo_cambio * 2 -2)) -lt ${#i} ]]; then
 				id=$(echo $((i-1)) | cut -c $(($ultimo_cambio * 2 - 1))-)
 				printf "%-2s" "${id:0:2}"
 			else
-				echo -ne '  '
+				echo -ne '\e[0m  '
 			fi
 		else
 			echo -ne '  '
 		fi
-	done
-	printf "| %-3s tiempo  \e[38;5;17m#\e[39m\n" "$((tiempo+1))"
+	done # yo si que estoy done con esta función... No duermo por esta función, no vivo por esta función, no he visto la luz solar en 2 meses por esta función, mi cerebro funciona en bash por esta función, no recuerdo la última vez que esta función ha durado intacta más de 24 horas seguidas.
+	printf "\e[0m| %-3s tiempo  \e[38;5;17m#\e[39m\n" "$((tiempo+1))"
 
 	header 0
 }
@@ -597,6 +608,7 @@ function step() {
 		ejecucion
 		calcularEjecucion
 	fi
+	read -n 100 -t .0001
 	if [[ ! -z $tiempo_break ]] && [[ $((tiempo + 1)) -eq $tiempo_break ]]; then
 		modo_debug=1
 		if [[ ! -z $modo_silencio ]]; then
@@ -1253,6 +1265,7 @@ function finalizarEjecucion() {
 		log 5 "ÚLTIMO TIEMPO: \e[44m$((tiempo - 1))" "ÚLTIMO TIEMPO: <$((tiempo - 1))>"
 		log 9 "FINAL DE EJECUCIÓN CON FECHA \e[44m$(date)\e[49m" "FINAL DE EJECUCIÓN CON FECHA <$(date)>"
 	else
+		echo -e "\e[91m!!!\e[39m EXCEPCIÓN \e[91m${error}\e[39m \e[91m!!!\e[39m"
 		log 9 "\e[91m!!!\e[39m EXCEPCIÓN \e[91m${error}\e[39m CON FECHA \e[44m$(date)\e[49m \e[91m!!!\e[39m" "!!! EXCEPCIÓN <${error}> CON FECHA <$(date)> !!!"
 	fi
 	log 2 "$(header 0)" "$(printf "%0.s-" {1..80})"
@@ -1442,5 +1455,6 @@ if [[ -z $modo_silencio ]]; then #si no es modo silecioso
 	notacionCientifica $mem_usada "mem_usada_redondeado" "mem_usada_abreviacion"
 	notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
 fi
+
 
 while true ; do step ; done
