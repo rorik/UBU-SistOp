@@ -608,7 +608,6 @@ function step() {
 		ejecucion
 		calcularEjecucion
 	fi
-	read -n 100 -t .0001
 	if [[ ! -z $tiempo_break ]] && [[ $((tiempo + 1)) -eq $tiempo_break ]]; then
 		modo_debug=1
 		if [[ ! -z $modo_silencio ]]; then
@@ -1187,7 +1186,7 @@ function ultimoTiempo() {
 #######################################
 function finalizarEjecucion() {
 	local -ri error=$1
-	local -i i j espera_total=0 respuesta_total=0
+	local -i i j espera_total=0 respuesta_total=0 ultimo_cambio buffer_1=0 buffer_2=0
 	local linea linea_no_esc id
 	if [[ $error -eq 0 ]]; then
 		log 5
@@ -1203,6 +1202,7 @@ function finalizarEjecucion() {
 		log 5
 
 		for ((j=0; j< (tiempo+39)/40; j++)); do
+			ultimo_cambio=$buffer_1
 			for ((i=j*40; i<=j*40+40 && i<tiempo; i++)); do
 				if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 					if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
@@ -1223,6 +1223,7 @@ function finalizarEjecucion() {
 				fi
 			done
 			log 3 "$linea" "$linea_no_esc"; linea=''; linea_no_esc=''
+			buffer_1=$ultimo_cambio
 
 			for ((i=j*40; i<=j*40+40 && i<tiempo; i++)); do
 				if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
@@ -1233,7 +1234,7 @@ function finalizarEjecucion() {
 			done
 			log 3 "$linea" "$linea_no_esc"; linea=''; linea_no_esc=''
 
-			ultimo_cambio=0
+			ultimo_cambio=$buffer_2
 			for ((i=j*40; i<=j*40+40 && i<tiempo; i++)); do
 				if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 					if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
@@ -1254,6 +1255,7 @@ function finalizarEjecucion() {
 				fi
 			done
 			log 3 "$linea" "$linea_no_esc"; linea=''; linea_no_esc=''
+			buffer_2=$ultimo_cambio
 			log 3
 		done
 
