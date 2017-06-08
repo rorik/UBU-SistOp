@@ -475,9 +475,9 @@ function actualizarInterfaz() {
 		if [[ $i -lt $mem_tamano ]]; then
 			if [[ $i -ne 0 ]] && ([[ ${mem_paginas[i]} -ne ${mem_paginas[((i - 1))]} ]] || ([[ -z ${mem_paginas[i]} ]] && [[ ! -z ${mem_paginas[((i - 1))]} ]])); then
 				case $i in
-					0|1|[24-27]) echo -ne '\e[38;5;17m';;
-					[2-4]|21[1-3]) echo -ne '\e[38;5;18m';;
-					[5-7]|18|19|20|21) echo -ne '\e[38;5;19m';;
+					0|1|26|27) echo -ne '\e[38;5;17m';;
+					[2-4]|[23-25]) echo -ne '\e[38;5;18m';;
+					[5-7]|[20-22]) echo -ne '\e[38;5;19m';;
 					*) echo -ne '\e[38;5;20m';;
 				esac
 				echo -n '|'
@@ -687,117 +687,99 @@ function step() {
 #		Nada
 #######################################
 function stepLog() {
-	local -i i index
-	local estado id estado_no_esc linea linea_no_esc
-	log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
-	log 3 "$(printf "\e[38;5;17m#\e[39m%32sINSTANTE: %3d%33s\e[38;5;17m#\e[39m" " " "$tiempo" " ")" "$(printf "#%32sINSTANTE: %3d%33s#" " " "$tiempo" " ")"
-	log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
-	log 3 "\e[38;5;17m#\e[39m     ID     \e[38;5;18m#\e[39m T.Rest \e[38;5;19m#\e[39m   Estado   \e[38;5;21m#\e[39m T.LLeg \e[38;5;21m#\e[39m T.Ej \e[38;5;20m#\e[39m T.Esp \e[38;5;19m#\e[39m T.Rspt \e[38;5;18m#\e[39m Posición \e[38;5;17m#\e[39m" "#      ID    # T.Rest #   Estado   # T.LLeg # T.Ej # T.Esp # T.Rspt # Posición #"
-	# for ((i=0; i<${#mem_proc_id[@]}; i++)); do
-	# 	index=${mem_proc_index[$i]}
-	# 	id=${proc_id[$index]:0:9}
-	# 	if [[ $i -eq $mem_siguiente_ejecucion ]]; then
-	# 		estado="95mEJECUCION "
-	# 		estado_no_esc="EJECUCION "
-	# 	else
-	# 		estado="92mEN MEMORIA"
-	# 		estado_no_esc="EN MEMORIA"
-	# 	fi
-	# 	log 3 "$(printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "$estado" "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index]} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)")" "$(printf "# %*s%*s # %6d # %-10s #  %4d  # %4d # %4d  #  %4d  #%3d - %-3d #\n" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_tiempo_ejecucion_restante[$index]}" "$estado_no_esc" "${proc_tiempo_llegada[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_tiempo_espera[$index]}" "${proc_tiempo_respuesta[$index]}" "$(echo ${proc_posicion[$index]} | cut -d ' ' -f1)" "$(echo ${proc_posicion[$index]} | rev | cut -d ' ' -f1 | rev)")"
-	# done
-	# for ((i=0; i<${#swp_proc_id[@]}; i++)); do
-	# 	index=${swp_proc_index[$i]}
-	# 	id=${proc_id[$index]:0:9}
-	# 	estado="93mESPERANDO "
-	# 	estado_no_esc="ESPERANDO "
-	# 	log 3 "$(printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "$estado" "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)")" "$(printf "# %*s%*s # %6d # %-10s #  %4d  # %4d # %4d  #  %4d  #%3d - %-3d #\n" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_tiempo_ejecucion_restante[$index]}" "$estado_no_esc" "${proc_tiempo_llegada[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_tiempo_espera[$index]}" "${proc_tiempo_respuesta[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)")"
-	# done
-	# for ((i=0; i<${#proc_id[@]}; i++)); do
-	# 	index=$i
-	# 	id=${proc_id[$index]:0:9}
-	# 	estado="91mNO LLEGADO"
-	# 	estado_no_esc="NO LLEGADO"
-	# 	if [[ ${proc_tiempo_llegada[$index]} -gt $tiempo ]]; then
-	# 		log 3 "$(printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "$estado" "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)")" "$(printf "# %*s%*s # %6d # %-10s #  %4d  # %4d # %4d  #  %4d  #%3d - %-3d #\n" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_tiempo_ejecucion_restante[$index]}" "$estado_no_esc" "${proc_tiempo_llegada[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_tiempo_espera[$index]}" "${proc_tiempo_respuesta[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)")"
-	# 	fi
-	# done
-	# for ((i=0; i<${#out_proc_index[@]}; i++)); do
-	# 	index=${out_proc_index[$i]}
-	# 	id=${proc_id[$index]:0:9}
-	# 	estado="96mFINALIZADO"
-	# 	estado_no_esc="FINALIZADO"
-	# 	log 3 "$(printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[38;5;18m#\e[39m \e[%sm%6d\e[0m \e[38;5;19m#\e[39m \e[%-10s\e[0m \e[38;5;21m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;21m#\e[39m \e[%sm%4d\e[0m \e[38;5;20m#\e[39m \e[%sm%4d\e[0m  \e[38;5;19m#\e[39m  \e[%sm%4d\e[0m  \e[38;5;18m#\e[39m\e[%sm%3d\e[0m - \e[%sm%-3d\e[0m \e[38;5;17m#\e[39m\n" "${proc_color[$index]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[$index]}" "${proc_tiempo_ejecucion_restante[$index]}" "$estado" "${proc_color[$index]}" "${proc_tiempo_llegada[$index]}" "${proc_color[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_color[$index]}" "${proc_tiempo_espera[$index]}" "${proc_color[$index]}" "${proc_tiempo_respuesta[$index]}" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "${proc_color[$index]}" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)")" "$(printf "# %*s%*s # %6d # %-10s #  %4d  # %4d # %4d  #  %4d  #%3d - %-3d #\n" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_tiempo_ejecucion_restante[$index]}" "$estado_no_esc" "${proc_tiempo_llegada[$index]}" "${proc_tiempo_ejecucion[$index]}" "${proc_tiempo_espera[$index]}" "${proc_tiempo_respuesta[$index]}" "$(echo ${proc_posicion[$index])} | cut -d ' ' -f1)" "$(echo ${proc_posicion[$index])} | rev | cut -d ' ' -f1 | rev)")"
-	# done
-	#
-	# log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
-	# linea='\e[38;5;17m#\e[39m '; linea_no_esc='# '
-	# for i in {0..24}; do
-	# 	if [[ $i -ne 0 ]] && ([[ ${mem_paginas[$i]} -ne ${mem_paginas[$((i - 1))]} ]] || ([[ -z ${mem_paginas[$i]} ]] && [[ ! -z ${mem_paginas[$((i - 1))]} ]])); then
-	# 		case $i in
-	# 			0|1|24) linea+='\e[38;5;17m';;
-	# 			[2-4]|21[1-3]) linea+='\e[38;5;18m';;
-	# 			[5-7]|18|19|20|21) linea+='\e[38;5;19m';;
-	# 			*) linea+='\e[38;5;20m';;
-	# 		esac
-	# 		linea+='|'; linea_no_esc+='|'
-	# 	else
-	# 		linea+=' '; linea_no_esc+=' '
-	# 	fi
-	# 	if [[ -z ${mem_paginas[$i]} ]]; then
-	# 		linea+='\e[38;5;236m##\e[0m'; linea_no_esc+='=='
-	# 	else
-	# 		linea+="$(printf "\e[${proc_color[${mem_paginas[$i]}]}m%2d\e[0m" "${mem_paginas_secuencia[${i}]}")"
-	# 		linea_no_esc+="$(printf "%2d" "${mem_paginas_secuencia[${i}]}")"
-	# 	fi
-	# done
-	# log 3 "$linea  \e[38;5;17m#\e[39m" "$linea_no_esc  #"
-	#
-	# log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
-	#
-	# linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	# for ((i=(tiempo-30); i<=(tiempo); i++)); do
-	# 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[$i]} -ne ${linea_tiempo[((i-1))]} || $i -eq 0 ]]; then
-	# 			linea+='| '; linea_no_esc+='| '
-	# 		elif [[ $i -gt 0 ]] && [[ ${linea_tiempo[((i-1))]} -ne ${linea_tiempo[((i-2))]} && ${linea_tiempo[$i]} -eq ${linea_tiempo[((i-1))]} || $i -eq 1 ]]; then
-	# 			linea+=$(printf "%-2d" ${linea_tiempo[$i]:0:2}); linea_no_esc+=$(printf "%-2d" ${linea_tiempo[$i]:0:2})
-	# 		else
-	# 			linea+='  '; linea_no_esc+='  '
-	# 		fi
-	# done
-	# linea+='|   proceso   \e[38;5;17m#\e[39m'; linea_no_esc+='|   proceso   #'
-	# log 3 "$linea" "$linea_no_esc"
-	#
-	# linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	# for ((i=(tiempo-30); i<=(tiempo); i++)); do
-	# 		if [[ $i -ge 0 ]]; then
-	# 			linea+="\e[${proc_color[${linea_tiempo[$i]}]}m"
-	# 		fi
-	# 		linea+='==\e[0m'; linea_no_esc+='=='
-	# done
-	# linea+='===========>  \e[38;5;17m#\e[39m'; linea_no_esc+='===========>  #'
-	# log 3 "$linea" "$linea_no_esc"
-	#
-	# linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	# for ((i=(tiempo-30); i<=(tiempo); i++)); do
-	# 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[$i]} -ne ${linea_tiempo[((i-1))]} || $i -eq 0 ]]; then
-	# 			linea+='| '; linea_no_esc+='| '
-	# 		elif [[ $i -gt 0 ]] && [[ ${linea_tiempo[((i-1))]} -ne ${linea_tiempo[((i-2))]} && ${linea_tiempo[$i]} -eq ${linea_tiempo[((i-1))]} || $i -eq 1 ]]; then
-	# 			if [[ $i -ne $tiempo ]]; then
-	# 				linea+=$(printf "%-4d" $((i-1))); linea_no_esc+=$(printf "%-4d" $((i-1)))
-	# 				((i++))
-	# 			else
-	# 				((i--))
-	# 				linea+=$(printf "%-2d" ${i:0:2}); linea_no_esc+=$(printf "%-2d" ${i:0:2})
-	# 				((i++))
-	# 			fi
-	# 		else
-	# 			linea+='  '; linea_no_esc+='  '
-	# 		fi
-	# done
-	# linea+=$(printf "|%-3s tiempo   \e[38;5;17m#\e[39m" "$tiempo"); linea_no_esc+=$(printf "|%-3s tiempo   #" "$tiempo")
-	# log 3 "$linea" "$linea_no_esc"
+	local -i i j ultimo_cambio=0 offset
+	local -a paginas
+	local id estado estado_color estado_no_esc linea linea_no_esc
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..90})"
+	log 3 "$(printf "\e[38;5;17m#\e[39m%37sINSTANTE: %3d%38s\e[38;5;17m#\e[39m" " " "$tiempo" " ")" "$(printf "#%37sINSTANTE: %3d%38s#" " " "$tiempo" " ")"
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..90})"
+	log 3 '\e[38;5;17m#\e[39m     ID     T.LL  T.Ej  Mrcos  Estd   T.Rst T.CPU T.Esp T.Rsp  Pos       Paginas        \e[38;5;17m#\e[39m' '#     ID     T.LL  T.Ej  Mrcos  Estd   T.Rst T.CPU T.Esp T.Rsp  Pos       Paginas        #'
+	for ((i=0; i<${#proc_id[@]}; i++)); do
+		id=${proc_id[$i]:0:9}
+		if [[ ${proc_estado[i]} -ge 16 ]]; then
+			estado='FINL'
+			estado_color='96'
+		elif [[ ${proc_estado[i]} -ge 8 ]]; then
+			estado='EJEC'
+			estado_color='95'
+		elif [[ ${proc_estado[i]} -ge 4 ]]; then
+			estado='MEM '
+			estado_color='92'
+		elif [[ ${proc_estado[i]} -ge 2 ]]; then
+			estado='ESPR'
+			estado_color='93'
+		else
+			estado='NOLL'
+			estado_color='91'
+		fi
 
-	log 3 "$(header 0)" "$(printf "%0.s#" {1..80})"
+		for ((j=-3; j<=3; j++)); do
+			if [[ $j -ge 0 ]]; then
+				paginas[$j]=''
+				paginas[$j]=$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+j+1)))
+			elif [[ ${proc_tiempo_ejecucion[i]} -ge $((-j)) ]]; then
+				paginas[$((9-j))]=$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+j+1)))
+			else
+				paginas[$((9-j))]=''
+			fi
+		done
+
+		linea=$(printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m    \e[%sm%s\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m  \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[4;%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[38;5;17m#\e[39m" "${proc_color[i]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[i]}" "${proc_tiempo_llegada[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion_esperado[i]}" "${proc_color[i]}" "${proc_tamano[i]}" "$estado_color" "$estado" "${proc_color[i]}" "${proc_tiempo_ejecucion_restante[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_color[i]}" "${proc_tiempo_espera[i]}" "${proc_color[i]}" "${proc_tiempo_respuesta[i]}" "${proc_color[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)" "${proc_color[i]}" "${paginas[12]}" "${proc_color[i]}" "${paginas[11]}" "${proc_color[i]}" "${paginas[10]}" "${proc_color[i]}" "${paginas[0]}" "${proc_color[i]}" "${paginas[1]}" "${proc_color[i]}" "${paginas[2]}" "${proc_color[i]}" "${paginas[3]}")
+		linea_no_esc=$(printf "# %*s%*s %3d   %3d   %3d    %s   %3d   %3d   %3d   %3d   %3d  %2s %2s %2s>%2s<%2s %2s %2s #" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_ejecucion_esperado[i]}" "${proc_tamano[i]}" "$estado" "${proc_tiempo_ejecucion_restante[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_tiempo_espera[i]}" "${proc_tiempo_respuesta[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)" "${paginas[12]}" "${paginas[11]}" "${paginas[10]}" "${paginas[0]}" "${paginas[1]}" "${paginas[2]}" "${paginas[3]}")
+		log 3 "$linea" "$linea_no_esc"
+	done
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..90})"
+
+	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
+	for i in {0..27}; do
+		offset=$(echo ${proc_posicion[mem_paginas[i]]} | cut -d ' ' -f1)
+		if [[ ! -z ${mem_paginas[$i]} ]] && [[ $i -lt $mem_tamano ]] && [[ $i -eq $((proc_paginas_apuntador[mem_paginas[i]] + offset)) ]]; then
+			linea+="  \e[${proc_color[${mem_paginas[i]}]}mv\e[0m"; linea_no_esc+='  v'
+		else
+			linea+='   '; linea_no_esc+='   '
+		fi
+	done
+  log 3 "$linea  \e[38;5;17m#\e[39m" "$linea_no_esc  #"
+
+	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
+	for i in {0..27}; do
+		if [[ $i -lt $mem_tamano ]]; then
+			if [[ $i -ne 0 ]] && ([[ ${mem_paginas[i]} -ne ${mem_paginas[((i - 1))]} ]] || ([[ -z ${mem_paginas[i]} ]] && [[ ! -z ${mem_paginas[((i - 1))]} ]])); then
+				case $i in
+					0|1|26|27) linea+='\e[38;5;17m';;
+					[2-4]|[23-25]) linea+='\e[38;5;18m';;
+					[5-7]|[20-22]) linea+='\e[38;5;19m';;
+					*) linea+='\e[38;5;20m';;
+				esac
+				linea+='|'; linea_no_esc+='|'
+			else
+				linea+=' '; linea_no_esc+=' '
+			fi
+			if [[ -z ${mem_paginas[$i]} ]]; then
+				linea+='\e[38;5;236m##\e[0m'; linea_no_esc+='##'
+			elif [[ ${mem_paginas_secuencia[i]} -eq -1 ]]; then
+				linea+="\e[${proc_color[${mem_paginas[i]}]}m##\e[0m"; linea_no_esc+='##'
+			else
+				linea+="$(printf "\e[${proc_color[${mem_paginas[i]}]}m%2d\e[0m" "${mem_paginas_secuencia[i]}")"; linea_no_esc+="$(printf "%2d" "${mem_paginas_secuencia[i]}")"
+			fi
+		else
+			linea+='   '; linea_no_esc+='   '
+		fi
+	done
+	log 3 "$linea  \e[38;5;17m#\e[39m" "$linea_no_esc  #"
+
+	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
+	for i in {0..27}; do
+		if [[ $i -lt $mem_tamano ]]; then
+			linea+="$(printf " %2d" "$i")"; linea_no_esc+="$(printf " %2d" "$i")"
+		else
+			linea+='   '; linea_no_esc+='   '
+		fi
+	done
+	log 3 "$linea  \e[38;5;17m#\e[39m" "$linea_no_esc  #"
+	log 3 "$(header 0)" "$(printf "%0.s#" {1..90})"
+
+	# $echo ${linea de tiempo y esas cosas que faltan, gracias} (no me apetece aumentar aún más el tiempo de ejecución al algoritmo)
 }
 
 #######################################
@@ -1207,13 +1189,14 @@ function finalizarEjecucion() {
 	local -ri error=$1
 	local -i i j espera_total=0 respuesta_total=0
 	local linea linea_no_esc id
-	log 0 "TIEMPO DE EJECUCIÓN: ${SECONDS}s" '@'
 	if [[ $error -eq 0 ]]; then
 		log 5
 		log 5 "$(printf "%7s%s%8s-  %s  -  %s  -   %s  -    %s" " " "ID" " " "LLEGADA" "SALIDA" "REPUESTA" "ESPERA")" '@'
+		if [[ -z $modo_silencio ]]; then printf "%7s%s%8s-  %s  -  %s  -   %s  -    %s\n" " " "ID" " " "LLEGADA" "SALIDA" "REPUESTA" "ESPERA"; fi
 		for ((i=0; i<proc_count; i++)); do
 			id=${proc_id[i]:0:15}
 			log 5 "$(printf "\e[%sm%*s\e[0m%*s - %5d     -  %5d   - %7d     - %7d" "${proc_color[i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}")" "$(printf "%*s%*s - %5d     -  %5d   - %7d     - %7d" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}")"
+			if [[ -z $modo_silencio ]]; then printf "\e[%sm%*s\e[0m%*s - %5d     -  %5d   - %7d     - %7d\n" "${proc_color[i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}"; fi
 			espera_total+=${proc_tiempo_espera[i]}
 			respuesta_total+=${proc_tiempo_respuesta[i]}
 		done
@@ -1221,39 +1204,54 @@ function finalizarEjecucion() {
 
 		for ((j=0; j< (tiempo+39)/40; j++)); do
 			for ((i=j*40; i<=j*40+40 && i<tiempo; i++)); do
-					if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne ${linea_tiempo[((i-1))]} || $i -eq 0 ]]; then
-						linea+='| '; linea_no_esc+='| '
-					elif [[ $i -gt 0 ]] && [[ ${linea_tiempo[((i-1))]} -ne ${linea_tiempo[((i-2))]} && ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} || $i -eq 1 ]]; then
-						linea+=$(printf "%-2d" ${linea_tiempo[i]:0:2}); linea_no_esc+=$(printf "%-2d" ${linea_tiempo[i]:0:2})
+				if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
+					if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
+						((++ultimo_cambio))
 					else
-						linea+='  '; linea_no_esc+='  '
+						ultimo_cambio=0
 					fi
+					if [[ $ultimo_cambio -eq 0 ]]; then
+						linea+="\e[${proc_color[linea_tiempo[i]]}m| "; linea_no_esc+='| '
+					elif [[ $((ultimo_cambio * 2 -2)) -lt ${#proc_id[linea_tiempo[i]]} ]]; then
+						id=$(echo ${proc_id[linea_tiempo[i]]} | cut -c $(($ultimo_cambio * 2 - 1))-)
+						linea+="$(printf "%-2s" "${id:0:2}")"; linea_no_esc+="$(printf "%-2s" "${id:0:2}")"
+					else
+						linea+='\e[0m  '; linea_no_esc+='  '
+					fi
+				else
+					linea+='\e[0m  '; linea_no_esc+='  '
+				fi
 			done
 			log 3 "$linea" "$linea_no_esc"; linea=''; linea_no_esc=''
 
 			for ((i=j*40; i<=j*40+40 && i<tiempo; i++)); do
-					if [[ $i -ge 0 ]]; then
-						linea+="\e[${proc_color[${linea_tiempo[i]}]}m"
-					fi
-					linea+='==\e[0m'; linea_no_esc+='=='
+				if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
+					linea+="\e[${proc_color[${linea_tiempo[$i]}]}m=="; linea_no_esc+='=='
+				else
+					linea+='\e[49;38;5;237m--'; linea_no_esc+='--'
+				fi
 			done
 			log 3 "$linea" "$linea_no_esc"; linea=''; linea_no_esc=''
 
+			ultimo_cambio=0
 			for ((i=j*40; i<=j*40+40 && i<tiempo; i++)); do
-					if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne ${linea_tiempo[((i-1))]} || $i -eq 0 ]]; then
-						linea+='| '; linea_no_esc+='| '
-					elif [[ $i -gt 0 ]] && [[ ${linea_tiempo[((i-1))]} -ne ${linea_tiempo[((i-2))]} && ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} || $i -eq 1 ]]; then
-						if [[ $i -ne $tiempo ]]; then
-							linea+=$(printf "%-4d" $((i-1))); linea_no_esc+=$(printf "%-4d" $((i-1)))
-							((i++))
-						else
-							((i--))
-							linea+=$(printf "%-2d" ${i:0:2}); linea_no_esc+=$(printf "%-2d" ${i:0:2})
-							((i++))
-						fi
+				if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
+					if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
+						((++ultimo_cambio))
 					else
-						linea+='  '; linea_no_esc+='  '
+						ultimo_cambio=0
 					fi
+					if [[ $ultimo_cambio -eq 0 ]]; then
+						linea+="\e[${proc_color[linea_tiempo[i]]}m| "; linea_no_esc+='| '
+					elif [[ $((ultimo_cambio * 2 -2)) -lt ${#i} ]]; then
+						id=$(echo $((i-1)) | cut -c $(($ultimo_cambio * 2 - 1))-)
+						linea+="$(printf "%-2s" "${id:0:2}")"; linea_no_esc+="$(printf "%-2s" "${id:0:2}")"
+					else
+						linea+='\e[0m  '; linea_no_esc+='  '
+					fi
+				else
+					linea+='  '; linea_no_esc+='  '
+				fi
 			done
 			log 3 "$linea" "$linea_no_esc"; linea=''; linea_no_esc=''
 			log 3
@@ -1262,7 +1260,9 @@ function finalizarEjecucion() {
 		log 3 "Tiempo de espera medio: \e[44m$((espera_total / i)).$(( (espera_total * 1000 ) / i % 1000))" "Tiempo de espera medio: <$((espera_total / i)).$(( (espera_total * 1000 ) / i % 1000))>"
 		log 3 "Tiempo de respuesta medio: \e[44m$((respuesta_total / i)).$(( (respuesta_total * 1000 ) / i % 1000))" "Tiempo de respuesta medio: <$((respuesta_total / i)).$(( (respuesta_total * 1000 ) / i % 1000))>"
 		log 3
+		log 0 "TIEMPO DE EJECUCIÓN: \e[44m${SECONDS}s" "TIEMPO DE EJECUCIÓN: <${SECONDS}s>"
 		log 5 "ÚLTIMO TIEMPO: \e[44m$((tiempo - 1))" "ÚLTIMO TIEMPO: <$((tiempo - 1))>"
+		echo -e "\nFINAL DE EJECUCIÓN - ÚLTIMO TIEMPO: \e[44m$((tiempo - 1))\e[0m"
 		log 9 "FINAL DE EJECUCIÓN CON FECHA \e[44m$(date)\e[49m" "FINAL DE EJECUCIÓN CON FECHA <$(date)>"
 	else
 		echo -e "\e[91m!!!\e[39m EXCEPCIÓN \e[91m${error}\e[39m \e[91m!!!\e[39m"
