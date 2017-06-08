@@ -1,6 +1,6 @@
 # UBU-SistOp
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](srpt.sh)
-[![Release](https://img.shields.io/badge/release-v1.2-blue.svg)](https://github.com/rorik/UBU-SistOp/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.3-blue.svg)](https://github.com/rorik/UBU-SistOp/releases/latest)
 
 ### Ejecución
 Para una correcta ejecución y visualización del programa, se recomienda usar konsole, u otro terminal compatible con colores de 8 bits. Así como una versión de bash actualizada (>=4.3).
