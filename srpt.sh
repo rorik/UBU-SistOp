@@ -472,7 +472,7 @@ function salidaEjecucion() {
 	linea_no_esc='#     ID     T.LL  T.Ej  Mrcos  Estd   T.Rst T.CPU T.Esp T.Rsp  Pos       Paginas        #'
 
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
-	for ((i=0; i<${#proc_id[@]}; i++)); do
+	for i in ${proc_orden[@]}; do
 		id=${proc_id[$i]:0:9}
 		if [[ ${proc_estado[i]} -ge 16 ]]; then
 			estado='FINL'
@@ -707,7 +707,6 @@ function step() {
 
 	if [[ ${#mem_proc_id[@]} -gt 0 ]]; then
 		ejecucion
-		calcularEjecucion
 	fi
 
 	((tiempo++))
@@ -1021,6 +1020,32 @@ function calcularEjecucion() {
 		((proc_estado[index]&=~8))
 	done
 	((proc_estado[min_index]|=8))
+}
+
+#######################################
+#	Ordena los proc. por orden de llegada
+#	Globales:
+#		proc_tiempo_llegada
+#	Argumentos:
+#		Nada
+#	Devuelve:
+#		Nada
+#######################################
+function ordenarProcesos() {
+	local -i i j min_index=0 min=${proc_tiempo_llegada[0]}
+	local -a procesos_pendientes
+	procesos_pendientes=("${proc_tiempo_llegada[@]}")
+	for ((i=0; i<proc_count; i++)); do
+		for ((j=0; j<${#procesos_pendientes[@]}; j++)); do
+			if [[ ${procesos_pendientes[j]} -lt $min && ${procesos_pendientes[j]} -ge 0 ]] || [[ $min -eq -1 ]]; then
+				min=${procesos_pendientes[j]}
+				min_index=$j
+			fi
+		done
+		proc_orden[$i]=$min_index
+		procesos_pendientes[$min_index]=-1
+		min=-1
+	done
 }
 
 #######################################
@@ -1373,8 +1398,8 @@ function cabeceraLog() {
 #_____________________________________________
 
 SECONDS=0
-declare -a proc_id proc_estado proc_tamano proc_paginas proc_direcciones proc_tiempo_llegada proc_tiempo_salida proc_tiempo_ejecucion proc_tiempo_ejecucion_restante proc_tiempo_espera proc_tiempo_respuesta proc_posicion proc_paginas_apuntador proc_paginas_fallos mem_paginas mem_proc_id mem_proc_index mem_proc_tamano swp_proc_id swp_proc_index out_proc_index proc_color_secuencia linea_tiempo
-declare -i proc_count mem_tamano mem_usada=0 tiempo=0 mem_tamano_redondeado mem_usada_redondeado proc_count_redondeado nivel_log=3
+declare -a proc_id proc_estado proc_tamano proc_paginas proc_direcciones proc_tiempo_llegada proc_tiempo_salida proc_tiempo_ejecucion proc_tiempo_ejecucion_restante proc_tiempo_espera proc_tiempo_respuesta proc_posicion proc_paginas_apuntador proc_paginas_fallos proc_orden mem_paginas mem_proc_id mem_proc_index mem_proc_tamano swp_proc_id swp_proc_index out_proc_index proc_color_secuencia linea_tiempo
+declare -i proc_count mem_tamano mem_usada tiempo mem_tamano_redondeado mem_usada_redondeado proc_count_redondeado nivel_log=3
 declare mem_tamano_abreviacion mem_usada_abreviacion proc_count_abreviacion evento evento_log evento_log_NoEsc filename
 
 log 9
@@ -1401,9 +1426,10 @@ fi
 
 pedirDatos
 salidaDatos
+ordenarProcesos
 
 notacionCientifica $mem_tamano "mem_tamano_redondeado" "mem_tamano_abreviacion"
-notacionCientifica $mem_usada "mem_usada_redondeado" "mem_usada_abreviacion"
+notacionCientifica "$mem_usada" "mem_usada_redondeado" "mem_usada_abreviacion"
 notacionCientifica $proc_count "proc_count_redondeado" "proc_count_abreviacion"
 
 while true ; do step ; done
