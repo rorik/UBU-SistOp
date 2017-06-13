@@ -1179,7 +1179,7 @@ function finalizarEjecucion() {
 		pantalla "$linea"
 		for ((i=0; i<proc_count; i++)); do
 			id=${proc_id[i]:0:15}
-			linea="$(printf "\e[%sm%*s\e[0m%*s - %5d     -  %5d   -  %5d     - %5d    - %5d" "${proc_color[i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}" "${proc_paginas_fallos[i]}")"
+			linea="$(printf "\e[%sm%*s\e[0m%*s - \e[${proc_color[i]}m%5d\e[0m     -  \e[${proc_color[i]}m%5d\e[0m   -  \e[${proc_color[i]}m%5d\e[0m     - \e[${proc_color[i]}m%5d\e[0m    - \e[${proc_color[i]}m%5d\e[0m" "${proc_color[i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}" "${proc_paginas_fallos[i]}")"
 			linea_no_esc="$(printf "%*s%*s - %5d     -  %5d   -  %5d     - %5d    - %5d" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}" "${proc_paginas_fallos[i]}")"
 			log 5 "$linea" "$linea_no_esc"
 			pantalla "$linea"
@@ -1253,14 +1253,17 @@ function finalizarEjecucion() {
 		linea="Tiempo de espera medio: \e[44m$linea_buffer"
 		linea_no_esc="Tiempo de espera medio: <$linea_buffer>"
 		pantalla "$linea"; log 5 "$linea" "$linea_no_esc"
+		
 		linea_buffer="$((respuesta_total / proc_count)).$(( (respuesta_total * 1000 ) / proc_count % 1000))"
 		linea="Tiempo de respuesta medio: \e[44m$linea_buffer"
 		linea_no_esc="Tiempo de respuesta medio: <$linea_buffer>"
 		pantalla "$linea"; log 5 "$linea" "$linea_no_esc"
+		
 		linea_buffer="$((fallos_total / proc_count)).$(( (fallos_total * 1000 ) / proc_count % 1000))"
-		linea="Numero de fallos medio: \e[44m$linea_buffer"
-		linea_no_esc="Numero de fallos medio: <$linea_buffer>"
+		linea="Número de fallos medio: \e[44m$linea_buffer"
+		linea_no_esc="Número de fallos medio: <$linea_buffer>"
 		pantalla "$linea"; log 5 "$linea" "$linea_no_esc"
+		
 		log 5
 		log 0 "TIEMPO DE EJECUCIÓN: \e[44m${SECONDS}s" "TIEMPO DE EJECUCIÓN: <${SECONDS}s>"
 		log 5 "ÚLTIMO TIEMPO: \e[44m$tiempo" "ÚLTIMO TIEMPO: <$tiempo>"
