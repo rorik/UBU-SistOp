@@ -561,7 +561,7 @@ function salidaEjecucion() {
 	header 0
 
 	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for ((i=tiempo-35; i<=tiempo; i++)); do
+	for ((i=tiempo-36; i<tiempo; i++)); do
 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 			if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
 				((++ultimo_cambio))
@@ -585,7 +585,7 @@ function salidaEjecucion() {
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
 
 	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for ((i=tiempo-35; i<=tiempo; i++)); do
+	for ((i=tiempo-36; i<tiempo; i++)); do
 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 			linea+="\e[${proc_color[${linea_tiempo[$i]}]}m=="; linea_no_esc+='=='
 		else
@@ -597,7 +597,7 @@ function salidaEjecucion() {
 
 	ultimo_cambio=0
 	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for ((i=tiempo-35; i<=tiempo; i++)); do
+	for ((i=tiempo-36; i<tiempo; i++)); do
 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 			if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
 				((++ultimo_cambio))
@@ -617,7 +617,7 @@ function salidaEjecucion() {
 			linea+='  '; linea_no_esc+='  '
 		fi
 	done
-	linea_buffer=$(printf "\e[0m| %-3s tiempo  " "$((tiempo+1))")
+	linea_buffer=$(printf "\e[0m| %-3s tiempo  " "$tiempo")
 	linea+="$linea_buffer\e[38;5;17m#\e[39m"; linea_no_esc+="$linea_buffer#"
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
 
@@ -662,8 +662,6 @@ function step() {
 		if [[ ${proc_tamano[${swp_proc_index[0]}]} -gt $mem_tamano ]]; then finalizarEjecucion 20; fi
 		if [[ $tiempo -ge 0 ]]; then linea_tiempo[$tiempo]=-1; fi
 	else
-		if [[ $tiempo -eq 0 ]]; then calcularEjecucion; fi
-		ejecucion
 		calcularEjecucion
 	fi
 
@@ -706,6 +704,11 @@ function step() {
 		fi
 	fi
 	unset evento
+
+	if [[ ${#mem_proc_id[@]} -gt 0 ]]; then
+		ejecucion
+		calcularEjecucion
+	fi
 
 	((tiempo++))
 }
@@ -849,8 +852,6 @@ function poblarMemoria() {
 	if [[ -n $swp_proc_id ]] && [[ ${proc_tamano[${swp_proc_index[0]}]} -le $((mem_tamano - mem_usada)) ]]; then
 		desfragmentarMemoria
 		poblarMemoria
-	else
-		calcularEjecucion
 	fi
 	if [[ -z $modo_silencio ]]; then
 		unset mem_usada_redondeado
@@ -1118,6 +1119,7 @@ function finalizarEjecucion() {
 	local -i i j espera_total=0 respuesta_total=0 ultimo_cambio buffer_1=0 buffer_2=0
 	local id linea linea_no_esc linea_buffer
 	if [[ $error -eq 0 ]]; then
+		salidaEjecucion
 		log 5
 		log 5 "$(printf "%7s%s%8s-  %s  -  %s  -   %s  -    %s" " " "ID" " " "LLEGADA" "SALIDA" "REPUESTA" "ESPERA")" '@'
 		if [[ -z $modo_silencio ]]; then printf "%7s%s%8s-  %s  -  %s  -   %s  -    %s\n" " " "ID" " " "LLEGADA" "SALIDA" "REPUESTA" "ESPERA"; fi
@@ -1318,11 +1320,9 @@ function colorLog() {
 #		Nada
 #######################################
 function cabeceraLog() {
-	local -r buffer=$modo_silencio
-	modo_silencio=1
 	if [[ $nivel_log -le 1 ]]; then
 		log 1 'LICENCIA DE USO:' '@'
-		header 0
+		header 0 2
 		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
 		log 1 "\e[38;5;17m#\e[39m                                 MIT License                                  \e[38;5;17m#\e[39m" "#                                 MIT License                                  #"
 		log 1 "\e[38;5;17m#\e[39m                Copyright (c) 2017 Diego González, Rodrigo Díaz               \e[38;5;17m#\e[39m" "#                Copyright (c) 2017 Diego González, Rodrigo Díaz               #"
@@ -1345,12 +1345,12 @@ function cabeceraLog() {
 		log 1 "\e[38;5;17m#\e[39m           - Hold the author liable. The work is                              \e[38;5;17m#\e[39m" "#           - Hold the author liable. The work is                              #"
 		log 1 "\e[38;5;17m#\e[39m             provided \"as is\".                                                \e[38;5;17m#\e[39m" "#             provided \"as is\".                                                #"
 		log 1 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
-		header 0
+		header 0 2
 		log 1
 	fi
 	if [[ $nivel_log -le 3 ]]; then
 		log 1 'CABECERA DEL PROGRAMA:' '@'
-		header 0
+		header 0 2
 		log 3 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
 		log 3 "\e[38;5;17m#\e[39m                   \e[48;5;17mSRPT, Paginación, FIFO, Memoria Continua,\e[0m                  \e[38;5;17m#" "#                   SRPT, Paginación, FIFO, Memoria Continua,                  #"
 		log 3 "\e[38;5;17m#\e[39m                  \e[48;5;17mFijas e iguales, Primer ajuste y Reubicable\e[0m                 \e[38;5;17m#" "#                  Fijas e iguales, Primer ajuste y Reubicable                 #"
@@ -1361,10 +1361,9 @@ function cabeceraLog() {
 		log 3 "\e[38;5;17m#\e[96m           Sistemas Operativos, Universidad de Burgos                         \e[38;5;17m#" "#           Sistemas Operativos, Universidad de Burgos                         #"
 		log 3 "\e[38;5;17m#\e[96m           Grado en ingeniería informática (2016-2017)                        \e[38;5;17m#" "#           Grado en ingeniería informática (2016-2017)                        #"
 		log 3 "\e[38;5;17m#\e[39m$(printf "%78s" " ")\e[38;5;17m#\e[39m" "#$(printf "%78s" " ")#"
-		header 0
+		header 0 2
 		log 3
 	fi
-	modo_silencio=$buffer
 }
 
 #_____________________________________________
