@@ -1253,17 +1253,17 @@ function finalizarEjecucion() {
 		linea="Tiempo de espera medio: \e[44m$linea_buffer"
 		linea_no_esc="Tiempo de espera medio: <$linea_buffer>"
 		pantalla "$linea"; log 5 "$linea" "$linea_no_esc"
-		
+
 		linea_buffer="$((respuesta_total / proc_count)).$(( (respuesta_total * 1000 ) / proc_count % 1000))"
 		linea="Tiempo de respuesta medio: \e[44m$linea_buffer"
 		linea_no_esc="Tiempo de respuesta medio: <$linea_buffer>"
 		pantalla "$linea"; log 5 "$linea" "$linea_no_esc"
-		
+
 		linea_buffer="$((fallos_total / proc_count)).$(( (fallos_total * 1000 ) / proc_count % 1000))"
 		linea="Número de fallos medio: \e[44m$linea_buffer"
 		linea_no_esc="Número de fallos medio: <$linea_buffer>"
 		pantalla "$linea"; log 5 "$linea" "$linea_no_esc"
-		
+
 		log 5
 		log 0 "TIEMPO DE EJECUCIÓN: \e[44m${SECONDS}s" "TIEMPO DE EJECUCIÓN: <${SECONDS}s>"
 		log 5 "ÚLTIMO TIEMPO: \e[44m$tiempo" "ÚLTIMO TIEMPO: <$tiempo>"
