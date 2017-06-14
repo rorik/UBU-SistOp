@@ -4,7 +4,7 @@
 # LICENSE: MIT
 
 if ! [[ (${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -eq 3 && ${BASH_VERSINFO[2]} -ge 48) || (${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -gt 3) || ${BASH_VERSINFO[0]} -gt 4 ]]; then read -n 1 -p "VERSIÓN DE BASH < 4.3.48, la ejecución en esta versión no ha sido testeada, ¿continuar (s/n)? "; [[ ! $REPLY =~ ^[SsYy] ]] && echo && exit 90; fi
-if [[ $(tput cols) -lt 90 ]]; then read -n 1 -p "El programa esta diseñado para funcionar con una ventana de al menos 90 caracteres de ancho, ¿continuar (s/n)? "; [[ ! $REPLY =~ ^[SsYy] ]] && echo && exit 91; fi
+if [[ $(tput cols) -lt 100 ]]; then read -n 1 -p "El programa esta diseñado para funcionar con una ventana de al menos 100 caracteres de ancho, ¿continuar (s/n)? "; [[ ! $REPLY =~ ^[SsYy] ]] && echo && exit 91; fi
 
 #_____________________________________________
 # COMIENZO DE FUNCIONES
@@ -43,8 +43,8 @@ function header() {
 		linea=
 		linea_no_esc=
 		for i in {17..21} {21..17} ; do
-			linea+="\e[38;5;${i}m#########"
-			linea_no_esc+='#########'
+			linea+="\e[38;5;${i}m##########"
+			linea_no_esc+='##########'
 		done
 		if [[ $salida -eq 0 ]]; then
 			pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
@@ -57,11 +57,11 @@ function header() {
 		linea=
 		if [[ -z $modo_silencio ]]; then clear && clear; fi
 		header 0 $salida
-		linea='\e[38;5;17m#\e[0m            \e[48;5;17m ALGORITMO SRPT, PAGINACIÓN FIFO, MEMORIA CONTINUA Y REUBICABLE\e[0m             \e[38;5;17m#'
+		linea='\e[38;5;17m#\e[0m                 \e[48;5;17m ALGORITMO SRPT, PAGINACIÓN FIFO, MEMORIA CONTINUA Y REUBICABLE\e[0m                  \e[38;5;17m#'
 		pantalla "$linea"
 	else
 		header 1 $salida
-		linea='\e[38;5;17m#\e[0m           \e[48;5;17mMemoria: '
+		linea='\e[38;5;17m#\e[0m             \e[48;5;17mMemoria: '
 		if [[ -z $mem_usada_abreviacion ]]; then
 			linea+=$(printf " %3d/" "$mem_usada_redondeado")
 		else
@@ -72,15 +72,15 @@ function header() {
 		else
 			linea+=$(printf "%3d%1s\e[0m" "$mem_tamano_redondeado" "$mem_tamano_abreviacion")
 		fi
-		linea+=$(printf "       \e[48;5;17mTiempo: %3d\e[0m      \e[48;5;17mNúmero de Procesos: " "$tiempo")
+		linea+=$(printf "          \e[48;5;17mTiempo: %3d\e[0m         \e[48;5;17mNúmero de Procesos: " "$tiempo")
 		if [[ -z $proc_count_abreviacion ]]; then
 			linea+=$(printf " %3d" "$proc_count_redondeado")
 		else
 			linea+=$(printf "%3d%1s" "$proc_count_redondeado" "$proc_count_abreviacion")
 		fi
-		linea+='\e[0m           \e[38;5;17m#'
+		linea+='\e[0m             \e[38;5;17m#'
 		pantalla "$linea"
-		log 3 "$(printf "\e[38;5;17m#\e[39m%37sINSTANTE: %3d%38s\e[38;5;17m#\e[39m" " " "$tiempo" " ")" "$(printf "#%37sINSTANTE: %3d%38s#" " " "$tiempo" " ")"
+		log 3 "$(printf "\e[38;5;17m#\e[39m%42sINSTANTE: %3d%43s\e[38;5;17m#\e[39m" " " "$tiempo" " ")" "$(printf "#%42sINSTANTE: %3d%43s#" " " "$tiempo" " ")"
 		header 0
 	fi
 }
@@ -120,7 +120,7 @@ function pedirDatos() {
 			read -p "Tamaño (en marcos) de la memoria: " mem_tamano #te pide que escribas algo y eso eso va a ser el tamaño de memoria
 			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r" #te muestra en pantalla el texto y vuelve a la linea anterior
 		done
-		printf "%80s\n" " "
+		printf "%*s\n" "$(tput cols)" " "
 	fi
 
 	if [[ -z $proc_pagina_tamano ]]; then
@@ -129,7 +129,7 @@ function pedirDatos() {
 			read -p "Direcciones por página: " proc_pagina_tamano
 			printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 		done
-		printf "%80s\n" " "
+		printf "%*s\n" "$(tput cols)" " "
 	fi
 
 	if [[ -z $proc_id ]]; then
@@ -140,7 +140,7 @@ function pedirDatos() {
 				if [[ -z ${proc_tamano[i]} ]]; then finalizado=1; unset proc_tamano[$i]; fi
 				printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 			done
-			printf "%80s\n" " "
+			printf "%*s\n" "$(tput cols)" " "
 
 			until [[ ${proc_tiempo_llegada[i]} =~ ^[0-9]+$ ]] || [[ $finalizado -eq 1 ]]; do
 				printf "\e[1A%80s\r" " "
@@ -152,7 +152,7 @@ function pedirDatos() {
 				fi
 				printf "\e[91mINTRODUCE UN NÚMERO SUPERIOR A 0\e[39m\r"
 			done
-			printf "%80s\n" " "
+			printf "%*s\n" "$(tput cols)" " "
 
 			until [[ -n ${proc_direcciones[i]} ]] || [[ $finalizado -eq 1 ]]; do
 				printf "\e[1A%80s\r" " "
@@ -173,10 +173,10 @@ function pedirDatos() {
 					printf "\e[91mINTRODUCE NÚMEROS SEPARADOS POR COMAS\e[39m\r"
 				fi
 			done
-			printf "%80s\n" " "
+			printf "%*s\n" "$(tput cols)" " "
 
 			if [[ -z $finalizado ]]; then
-				printf "\e[1A%80s\r" " "
+				printf "%*s\r" "$(tput cols)" " "
 				proc_paginas[$i]=$(convertirDireccion ${proc_direcciones[i]})
 				proc_id[$i]="P${i}" #Si no tiene la id asignada le da una
 				proc_estado[$i]=1
@@ -481,15 +481,15 @@ function convertirDireccion() {
 #######################################
 function salidaEjecucion() {
 	local -i i j ultimo_cambio=0 offset
-	local -a paginas
-	local id estado estado_color linea linea_no_esc linea_buffer
+	local -a paginas paginas_color
+	local id estado estado_color linea linea_no_esc linea_buffer posicion fallo
 	header 2
-	linea='\e[38;5;17m#\e[39m     ID     T.LL  T.Ej  Mrcos  Estd   T.Rst T.CPU T.Esp T.Rsp  Pos       Paginas        \e[38;5;17m#\e[39m'
-	linea_no_esc='#     ID     T.LL  T.Ej  Mrcos  Estd   T.Rst T.CPU T.Esp T.Rsp  Pos       Paginas        #'
+	linea='\e[38;5;17m#\e[39m    ID     T.LL  T.Ej  Mrcos Estd T.Rst T.CPU T.Esp T.Rsp Pos               Paginas               \e[38;5;17m#\e[39m'
+	linea_no_esc='#    ID     T.LL  T.Ej  Mrcos Estd T.Rst T.CPU T.Esp T.Rsp Pos               Paginas               #'
 
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
 	for i in ${proc_orden[@]}; do
-		id=${proc_id[$i]:0:9}
+		id=${proc_id[$i]:0:8}
 		if [[ ${proc_estado[i]} -ge 16 ]]; then
 			estado='FINL'
 			estado_color='96'
@@ -507,37 +507,61 @@ function salidaEjecucion() {
 			estado_color='91'
 		fi
 
-		for ((j=-3; j<=3; j++)); do
+		for ((j=-5; j<=6; j++)); do
 			if [[ $j -ge 0 ]]; then
-				paginas[$j]=''
-				paginas[$j]=$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+j+1)))
+				if [[ $((proc_tiempo_ejecucion[i]+j)) -lt ${proc_tiempo_ejecucion_esperado[i]} ]]; then
+					paginas[$j]=$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+j+1)))
+					paginas_color[$j]="${proc_color[i]}"
+				else
+					paginas[$j]=
+					paginas_color[$j]=
+				fi
 			elif [[ ${proc_tiempo_ejecucion[i]} -ge $((-j)) ]]; then
 				paginas[$((9-j))]=$(echo ${proc_paginas[i]} | cut -d ',' -f $((proc_tiempo_ejecucion[i]+j+1)))
+				posicion="${i},$((proc_tiempo_ejecucion[i]+j)),p"
+				fallo="${proc_paginas_evolucion["$posicion"]}"
+				if [[ ! -z $fallo ]] && [[ $fallo -ge 0 ]]; then
+					paginas_color[$((9-j))]="1;${proc_color[i]}"
+				else
+					paginas_color[$((9-j))]="${proc_color[i]}"
+				fi
 			else
-				paginas[$((9-j))]=''
+				paginas[$((9-j))]=
+				paginas_color[$((9-j))]=
 			fi
 		done
 
-		linea=$(printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m    \e[%sm%s\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m  \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[4;%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[38;5;17m#\e[39m" "${proc_color[i]}" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[i]}" "${proc_tiempo_llegada[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion_esperado[i]}" "${proc_color[i]}" "${proc_tamano[i]}" "$estado_color" "$estado" "${proc_color[i]}" "${proc_tiempo_ejecucion_restante[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_color[i]}" "${proc_tiempo_espera[i]}" "${proc_color[i]}" "${proc_tiempo_respuesta[i]}" "${proc_color[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)" "${proc_color[i]}" "${paginas[12]}" "${proc_color[i]}" "${paginas[11]}" "${proc_color[i]}" "${paginas[10]}" "${proc_color[i]}" "${paginas[0]}" "${proc_color[i]}" "${paginas[1]}" "${proc_color[i]}" "${paginas[2]}" "${proc_color[i]}" "${paginas[3]}")
-		linea_no_esc=$(printf "# %*s%*s %3d   %3d   %3d    %s   %3d   %3d   %3d   %3d   %3d  %2s %2s %2s>%2s<%2s %2s %2s #" "$(((${#id}+10)/2))" "$id" "$((5-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_ejecucion_esperado[i]}" "${proc_tamano[i]}" "$estado" "${proc_tiempo_ejecucion_restante[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_tiempo_espera[i]}" "${proc_tiempo_respuesta[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)" "${paginas[12]}" "${paginas[11]}" "${paginas[10]}" "${paginas[0]}" "${paginas[1]}" "${paginas[2]}" "${paginas[3]}")
+		linea=$(printf "\e[38;5;17m#\e[39m \e[%sm%*s\e[0m%*s \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%s\e[0m \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m   \e[%sm%3d\e[0m  \e[%sm%3d\e[0m  \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[4;%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[%sm%2s\e[0m \e[38;5;17m#\e[39m" "${proc_color[i]}" "$(((${#id}+8)/2))" "$id" "$((5-${#id}/2))" " " "${proc_color[i]}" "${proc_tiempo_llegada[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion_esperado[i]}" "${proc_color[i]}" "${proc_tamano[i]}" "$estado_color" "$estado" "${proc_color[i]}" "${proc_tiempo_ejecucion_restante[i]}" "${proc_color[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_color[i]}" "${proc_tiempo_espera[i]}" "${proc_color[i]}" "${proc_tiempo_respuesta[i]}" "${proc_color[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)" "${paginas_color[14]}" "${paginas[14]}" "${paginas_color[13]}" "${paginas[13]}" "${paginas_color[12]}" "${paginas[12]}" "${paginas_color[11]}" "${paginas[11]}" "${paginas_color[10]}" "${paginas[10]}" "${paginas_color[0]}" "${paginas[0]}" "${paginas_color[1]}" "${paginas[1]}" "${paginas_color[2]}" "${paginas[2]}" "${paginas_color[3]}" "${paginas[3]}" "${paginas_color[4]}" "${paginas[4]}" "${paginas_color[5]}" "${paginas[5]}" "${paginas_color[6]}" "${paginas[6]}")
+		linea_no_esc=$(printf "# %*s%*s %3d   %3d   %3d   %s %3d   %3d   %3d   %3d  %3d  %2s %2s %2s %2s %2s>%2s<%2s %2s %2s %2s %2s %2s #" "$(((${#id}+8)/2))" "$id" "$((5-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_ejecucion_esperado[i]}" "${proc_tamano[i]}" "$estado" "${proc_tiempo_ejecucion_restante[i]}" "${proc_tiempo_ejecucion[i]}" "${proc_tiempo_espera[i]}" "${proc_tiempo_respuesta[i]}" "$(echo ${proc_posicion[i]} | cut -d ' ' -f1)" "${paginas[14]}" "${paginas[13]}" "${paginas[12]}" "${paginas[11]}" "${paginas[10]}" "${paginas[0]}" "${paginas[1]}" "${paginas[2]}" "${paginas[3]}" "${paginas[4]}" "${paginas[5]}" "${paginas[6]}")
 		pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
 	done
 	header 0
 
-	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for i in {0..27}; do
+	linea='\e[38;5;17m#\e[39m '; linea_no_esc='# '
+	for i in {0..31}; do
 		offset=$(echo ${proc_posicion[mem_paginas[i]]} | cut -d ' ' -f1)
-		if [[ -n ${mem_paginas[$i]} ]] && [[ $i -lt $mem_tamano ]] && [[ $i -eq $((proc_paginas_apuntador[mem_paginas[i]] + offset)) ]]; then
-			linea+="  \e[${proc_color[${mem_paginas[i]}]}mv\e[0m"; linea_no_esc+='  v'
+		if [[ -n ${mem_paginas[i]} ]] && [[ ${mem_paginas[i]} -ne $((mem_paginas[i-1])) ]]; then
+			ultimo_cambio=0
+		fi
+		if [[ -n ${mem_paginas[i]} ]] && [[ $i -lt $mem_tamano ]]; then
+			if [[ $i -eq $((proc_paginas_apuntador[mem_paginas[i]] + offset)) ]]; then
+				linea+=" \e[${proc_color[${mem_paginas[i]}]}mv\e[0m "; linea_no_esc+=' v '
+			else
+				((++ultimo_cambio))
+				id=$(echo ${proc_id[mem_paginas[i]]} | cut -c $(($ultimo_cambio * 3 - 2))-)
+				linea_buffer=$(printf "%-3s" "${id:0:3}")
+				linea+="\e[${proc_color[mem_paginas[i]]}m$linea_buffer\e[0m"; linea_no_esc+="$linea_buffer"
+			fi
 		else
 			linea+='   '; linea_no_esc+='   '
 		fi
 	done
-	linea+='  \e[38;5;17m#\e[39m'; linea_no_esc+='  #'
+	linea+=' \e[38;5;17m#\e[39m'; linea_no_esc+=' #'
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
+	ultimo_cambio=0
 
-	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for i in {0..27}; do
+	linea='\e[38;5;17m#\e[39m '; linea_no_esc='# '
+	for i in {0..31}; do
 		if [[ $i -lt $mem_tamano ]]; then
 			if [[ $i -ne 0 ]] && ([[ ${mem_paginas[i]} -ne ${mem_paginas[((i - 1))]} ]] || ([[ -z ${mem_paginas[i]} ]] && [[ -n ${mem_paginas[((i - 1))]} ]])); then
 				case $i in
@@ -561,23 +585,23 @@ function salidaEjecucion() {
 			linea+='   '; linea_no_esc+='   '
 		fi
 	done
-	linea+='  \e[38;5;17m#\e[39m'; linea_no_esc+='  #'
+	linea+=' \e[38;5;17m#\e[39m'; linea_no_esc+=' #'
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
 
-	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for i in {0..27}; do
+	linea='\e[38;5;17m#\e[39m '; linea_no_esc='# '
+	for i in {0..31}; do
 		if [[ $i -lt $mem_tamano ]]; then
 			linea+="$(printf " %2d" "$i")"; linea_no_esc+="$(printf " %2d" "$i")"
 		else
 			linea+='   '; linea_no_esc+='   '
 		fi
 	done
-	linea+='  \e[38;5;17m#\e[39m'; linea_no_esc+='  #'
+	linea+=' \e[38;5;17m#\e[39m'; linea_no_esc+=' #'
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
 	header 0
 
 	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for ((i=tiempo-36; i<tiempo; i++)); do
+	for ((i=tiempo-41; i<tiempo; i++)); do
 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 			if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
 				((++ultimo_cambio))
@@ -601,7 +625,7 @@ function salidaEjecucion() {
 	pantalla "$linea"; log 3 "$linea" "$linea_no_esc"
 
 	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for ((i=tiempo-36; i<tiempo; i++)); do
+	for ((i=tiempo-41; i<tiempo; i++)); do
 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 			linea+="\e[${proc_color[${linea_tiempo[$i]}]}m=="; linea_no_esc+='=='
 		else
@@ -613,7 +637,7 @@ function salidaEjecucion() {
 
 	ultimo_cambio=0
 	linea='\e[38;5;17m#\e[39m  '; linea_no_esc='#  '
-	for ((i=tiempo-36; i<tiempo; i++)); do
+	for ((i=tiempo-41; i<tiempo; i++)); do
 		if [[ $i -ge 0 ]] && [[ ${linea_tiempo[i]} -ne -1 ]]; then
 			if [[ $i -gt 0 ]] && [[ ${linea_tiempo[i]} -eq ${linea_tiempo[((i-1))]} ]]; then
 				((++ultimo_cambio))
@@ -670,7 +694,6 @@ function salidaEjecucion() {
 #######################################
 function step() {
 	local -i i
-	local tecla
 	if [[ $tiempo -le $tiempo_final ]]; then poblarSwap; fi
 	if [[ ! ${#swp_proc_id[@]} -eq 0 ]]; then poblarMemoria; fi
 	if [[ ${#mem_proc_id[@]} -eq 0 ]]; then
@@ -706,7 +729,12 @@ function step() {
 
 	if [[ -n $evento ]]; then
 		for ((i=0; i<${#evento_log[@]}; i++)); do
-			log 5 "${evento_log[$i]}" "${evento_log_NoEsc[$i]}"
+			if [[ $(echo ${evento_log_NoEsc[$i]} | cut -d ' ' -f2) == 'termina' ]]; then
+				log 5 "$(echo ${evento_log[$i]} | cut -d '#' -f1)" "$(echo ${evento_log_NoEsc[$i]} | cut -d '#' -f1)"
+				evolucionPaginas $(echo ${evento_log_NoEsc[$i]} | cut -d '#' -f2)
+			else
+				log 5 "${evento_log[$i]}" "${evento_log_NoEsc[$i]}"
+			fi
 		done
 		pantalla "${evento::-2}"
 		evento_log=()
@@ -716,7 +744,7 @@ function step() {
 	if [[ -n $evento ]] || [[ -n $modo_debug ]]; then
 		log 3
 		if [[ -z $modo_silencio ]]; then
-			read -p "Presiona cualquier tecla para continuar " -n 1 -r tecla
+			read -p "Presiona cualquier tecla para continuar " -n 1 -r
 		fi
 	fi
 	unset evento
@@ -917,8 +945,8 @@ function eliminarMemoria() {
 			evento+="\e[${proc_color[${mem_proc_index[$i]}]}m${mem_proc_id[$i]}\e[0m > \e[96mfinaliza\e[0m, "
 			proc_tiempo_salida[$index]=$tiempo
 			((proc_estado[index]|=16))
-			evento_log+=("\e[${proc_color[${index}]}m${mem_proc_id[$i]}\e[0m termina en instante \e[44m$tiempo\e[0m, con tiempo de espera \e[44m${proc_tiempo_espera[$index]}\e[0m y tiempo de ejecución \e[44m${proc_tiempo_ejecucion[${index}]}")
-			evento_log_NoEsc+=("${mem_proc_id[$i]} sale de memoria en <${tiempo}>, con tiempo de espera <${proc_tiempo_espera[$index]}> y tiempo de ejecución <${proc_tiempo_ejecucion[${index}]}>")
+			evento_log+=("\e[${proc_color[${index}]}m${mem_proc_id[$i]}\e[0m termina en instante \e[44m$tiempo\e[0m, con tiempo de espera \e[44m${proc_tiempo_espera[$index]}\e[0m y tiempo de ejecución \e[44m${proc_tiempo_ejecucion[${index}]}#$index")
+			evento_log_NoEsc+=("${mem_proc_id[$i]} termina en instante <${tiempo}>, con tiempo de espera <${proc_tiempo_espera[$index]}> y tiempo de ejecución <${proc_tiempo_ejecucion[${index}]}>#$index")
 			unset mem_proc_index[$i] #saca el indice de memoria
 			unset mem_proc_id[$i] #saca el id de memoria
 			for pos in ${proc_posicion[$index]}; do #por cada posicion del proceso hacer...
@@ -1004,10 +1032,9 @@ function ejecucion() {
 			((--proc_tiempo_ejecucion_restante[index]))
 			((++proc_tiempo_ejecucion[index]))
 			linea_tiempo[$tiempo]=$index
+			actualizarPaginas $index
 			if [[ ${proc_tiempo_ejecucion_restante[$index]} -eq 0 ]]; then
 				eliminarMemoria $index $i
-			else
-				actualizarPaginas $index
 			fi
 		else
 			((++proc_tiempo_espera[index]))
@@ -1088,18 +1115,102 @@ function ordenarProcesos() {
 #######################################
 function actualizarPaginas() {
 	local -ri index=$1
-	local -i fallo
+	local -i fallo i=0 apuntador
 	local -a paginas=()
+	local posicion posicion_previa
 	IFS=',' read -r -a paginas <<< "${proc_paginas[index]}"
 	local -r objetivo=${paginas[$((proc_tiempo_ejecucion[index]-1))]}
 	for posicion in ${proc_posicion[index]}; do
-		if [[ ${mem_paginas_secuencia[posicion]} -eq $objetivo ]]; then fallo=1; fi
+		if [[ ${mem_paginas_secuencia[posicion]} -eq $objetivo ]]; then fallo=$i; fi
+		((++i))
 	done
 	if [[ -z $fallo ]]; then
-		mem_paginas_secuencia[$(( $(echo ${proc_posicion[index]} | cut -d ' ' -f1) + proc_paginas_apuntador[index] ))]=$objetivo
+		apuntador=${proc_paginas_apuntador[index]}
+		mem_paginas_secuencia[$(( $(echo ${proc_posicion[index]} | cut -d ' ' -f1) + apuntador ))]=$objetivo
+		for ((i=0; i<proc_tamano[index]; i++)); do
+			posicion="$index,$((proc_tiempo_ejecucion[index]-1)),$i"
+			posicion_previa="$index,$((proc_tiempo_ejecucion[index]-2)),$i"
+			if [[ ${proc_paginas_evolucion["$posicion_previa"]} -ne -1 ]] && [[ $i -lt ${proc_tiempo_ejecucion[index]} ]]; then
+				proc_paginas_evolucion["$posicion"]=${proc_paginas_evolucion[$posicion_previa]}
+				else
+				proc_paginas_evolucion["$posicion"]=-1
+			fi
+		done
+		posicion="${index},$((proc_tiempo_ejecucion[index]-1)),$apuntador"
+		proc_paginas_evolucion["$posicion"]=$objetivo
+		posicion="${index},$((proc_tiempo_ejecucion[index]-1)),p"
+		proc_paginas_evolucion["$posicion"]=$apuntador
 		proc_paginas_apuntador[index]=$((++proc_paginas_apuntador[index]%proc_tamano[index]))
 		((++proc_paginas_fallos[index]))
+	else
+		for ((i=0; i<proc_tamano[index]; i++)); do
+			posicion="$index,$((proc_tiempo_ejecucion[index]-1)),$i"
+			posicion_previa="$index,$((proc_tiempo_ejecucion[index]-2)),$i"
+			proc_paginas_evolucion["$posicion"]=${proc_paginas_evolucion[$posicion_previa]}
+			posicion="${index},$((proc_tiempo_ejecucion[index]-1)),p"
+			proc_paginas_evolucion["$posicion"]=$((-fallo-1))
+		done
 	fi
+}
+
+#######################################
+#	Muestra evolución de paginas de proceso
+#	Globales:
+#		proc_paginas_evolucion
+#		proc_tamano
+#		proc_tiempo_ejecucion
+#	Argumentos:
+#		Index de proceso
+#	Devuelve:
+#		Nada
+#######################################
+function evolucionPaginas() {
+	local -ri index=$1
+	local -i i j fallo=0 apuntador
+	local linea linea_no_esc linea_buffer posicion pagina
+	for ((i=0; i< ${proc_tamano[index]}; i++)); do
+		linea+='_____'
+		linea_no_esc+='_____'
+	done
+	linea+='_'; linea_no_esc+='_'
+	log 3 "$linea" "$linea_no_esc"
+	for ((i=0; i< ${proc_tiempo_ejecucion[index]}; i++)); do
+		linea=;linea_no_esc=;fallo=0
+		posicion="${index},${i},p"
+		apuntador=${proc_paginas_evolucion["$posicion"]}
+		for ((j=0; j< ${proc_tamano[index]}; j++)); do
+			posicion="${index},${i},${j}"
+			pagina=${proc_paginas_evolucion["$posicion"]}
+			if [[ $pagina -ne -1 ]]; then
+				linea_buffer="$(printf "%2d " "$pagina")"
+				if [[ $j -eq $apuntador ]]; then
+					linea+="| \e[91m$linea_buffer\e[0m"
+					linea_no_esc+="|>$linea_buffer"
+				else
+					if [[ $apuntador -lt 0 ]] && [[ $j -eq $((-apuntador-1)) ]]; then
+						linea+="| \e[94m$linea_buffer\e[0m"
+						linea_no_esc+="|-$linea_buffer"
+					else
+						linea+="| $linea_buffer"
+						linea_no_esc+="| $linea_buffer"
+					fi
+				fi
+				fallo=1
+			else
+				linea+='|    '
+				linea_no_esc+='|    '
+			fi
+		done
+		linea+='|'; linea_no_esc+='|'
+		log 3 "$linea" "$linea_no_esc"
+	done
+	linea=;linea_no_esc=
+	for ((i=0; i< ${proc_tamano[index]}; i++)); do
+		linea+='¯¯¯¯¯'
+		linea_no_esc+='¯¯¯¯¯'
+	done
+	linea+='¯'; linea_no_esc+='¯'
+	log 3 "$linea" "$linea_no_esc"
 }
 
 #######################################
@@ -1174,13 +1285,13 @@ function finalizarEjecucion() {
 		salidaEjecucion
 		pantalla
 		log 5
-		linea="$(printf "%7s%s%8s-  %s  -  %s  -  %s  -  %s  -  %s" " " "ID" " " "LLEGADA" "SALIDA" "REPUESTA" "ESPERA" "FALLOS")"
+		linea="$(printf "%7s%s%8s-  %s  -  %s  -  %s  -  %s  -  %s" " " "ID" " " "LLEGADA" "SALIDA" "ESPERA" "REPUESTA" "FALLOS")"
 		log 5 "$linea" '@'
 		pantalla "$linea"
 		for ((i=0; i<proc_count; i++)); do
 			id=${proc_id[i]:0:15}
-			linea="$(printf "\e[%sm%*s\e[0m%*s - \e[${proc_color[i]}m%5d\e[0m     -  \e[${proc_color[i]}m%5d\e[0m   -  \e[${proc_color[i]}m%5d\e[0m     - \e[${proc_color[i]}m%5d\e[0m    - \e[${proc_color[i]}m%5d\e[0m" "${proc_color[i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}" "${proc_paginas_fallos[i]}")"
-			linea_no_esc="$(printf "%*s%*s - %5d     -  %5d   -  %5d     - %5d    - %5d" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_respuesta[i]}" "${proc_tiempo_espera[i]}" "${proc_paginas_fallos[i]}")"
+			linea="$(printf "\e[%sm%*s\e[0m%*s - \e[${proc_color[i]}m%5d\e[0m     -  \e[${proc_color[i]}m%5d\e[0m   -  \e[${proc_color[i]}m%5d\e[0m   -   \e[${proc_color[i]}m%5d\e[0m    - \e[${proc_color[i]}m%5d\e[0m" "${proc_color[i]}" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_espera[i]}" "${proc_tiempo_respuesta[i]}" "${proc_paginas_fallos[i]}")"
+			linea_no_esc="$(printf "%*s%*s - %5d     -  %5d   -  %5d   -   %5d    - %5d" "$(((${#id}+16)/2))" "$id" "$((8-${#id}/2))" " " "${proc_tiempo_llegada[i]}" "${proc_tiempo_salida[i]}" "${proc_tiempo_espera[i]}" "${proc_tiempo_respuesta[i]}" "${proc_paginas_fallos[i]}")"
 			log 5 "$linea" "$linea_no_esc"
 			pantalla "$linea"
 			espera_total+=${proc_tiempo_espera[i]}
@@ -1390,44 +1501,44 @@ function cabeceraLog() {
 	if [[ $nivel_log -le 1 ]]; then
 		log 1 'LICENCIA DE USO:' '@'
 		header 0 2
-		log 1 "\e[38;5;17m#\e[39m$(printf "%88s" " ")\e[38;5;17m#\e[39m" "#$(printf "%88s" " ")#"
-		log 1 "\e[38;5;17m#\e[39m                                      MIT License                                       \e[38;5;17m#\e[39m" "#                                      MIT License                                       #"
-		log 1 "\e[38;5;17m#\e[39m                     Copyright (c) 2017 Diego González, Rodrigo Díaz                    \e[38;5;17m#\e[39m" "#                     Copyright (c) 2017 Diego González, Rodrigo Díaz                    #"
-		log 1 "\e[38;5;17m#\e[39m                 ――――――――――――――――――――――――――――――――――――――――――――――――――――――                 \e[38;5;17m#\e[39m" "#                 ――――――――――――――――――――――――――――――――――――――――――――――――――――――                 #"
-		log 1 "\e[38;5;17m#\e[39m              You may:                                                                  \e[38;5;17m#\e[39m" "#              You may:                                                                  #"
-		log 1 "\e[38;5;17m#\e[39m                - Use the work commercially                                             \e[38;5;17m#\e[39m" "#                - Use the work commercially                                             #"
-		log 1 "\e[38;5;17m#\e[39m                - Make changes to the work                                              \e[38;5;17m#\e[39m" "#                - Make changes to the work                                              #"
-		log 1 "\e[38;5;17m#\e[39m                - Distribute the compiled code and/or source.                           \e[38;5;17m#\e[39m" "#                - Distribute the compiled code and/or source.                           #"
-		log 1 "\e[38;5;17m#\e[39m                - Incorporate the work into something that                              \e[38;5;17m#\e[39m" "#                - Incorporate the work into something that                              #"
-		log 1 "\e[38;5;17m#\e[39m                  has a more restrictive license.                                       \e[38;5;17m#\e[39m" "#                  has a more restrictive license.                                       #"
-		log 1 "\e[38;5;17m#\e[39m                - Use the work for private use                                          \e[38;5;17m#\e[39m" "#                - Use the work for private use                                          #"
-		log 1 "\e[38;5;17m#\e[39m$(printf "%88s" " ")\e[38;5;17m#\e[39m" "#$(printf "%88s" " ")#"
-		log 1 "\e[38;5;17m#\e[39m              You must:                                                                 \e[38;5;17m#\e[39m" "#              You must:                                                                 #"
-		log 1 "\e[38;5;17m#\e[39m                - Include the copyright notice in all                                   \e[38;5;17m#\e[39m" "#                - Include the copyright notice in all                                   #"
-		log 1 "\e[38;5;17m#\e[39m                  copies or substantial uses of the work                                \e[38;5;17m#\e[39m" "#                  copies or substantial uses of the work                                #"
-		log 1 "\e[38;5;17m#\e[39m                - Include the license notice in all copies                              \e[38;5;17m#\e[39m" "#                - Include the license notice in all copies                              #"
-		log 1 "\e[38;5;17m#\e[39m                  or substantial uses of the work                                       \e[38;5;17m#\e[39m" "#                  or substantial uses of the work                                       #"
-		log 1 "\e[38;5;17m#\e[39m$(printf "%88s" " ")\e[38;5;17m#\e[39m" "#$(printf "%88s" " ")#"
-		log 1 "\e[38;5;17m#\e[39m              You cannot:                                                               \e[38;5;17m#\e[39m" "#              You cannot:                                                               #"
-		log 1 "\e[38;5;17m#\e[39m                - Hold the author liable. The work is                                   \e[38;5;17m#\e[39m" "#                - Hold the author liable. The work is                                   #"
-		log 1 "\e[38;5;17m#\e[39m                  provided \"as is\".                                                     \e[38;5;17m#\e[39m" "#                  provided \"as is\".                                                     #"
-		log 1 "\e[38;5;17m#\e[39m$(printf "%88s" " ")\e[38;5;17m#\e[39m" "#$(printf "%88s" " ")#"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%98s" " ")\e[38;5;17m#\e[39m" "#$(printf "%98s" " ")#"
+		log 1 "\e[38;5;17m#\e[39m                                           MIT License                                            \e[38;5;17m#\e[39m" "#                                           MIT License                                            #"
+		log 1 "\e[38;5;17m#\e[39m                          Copyright (c) 2017 Diego González, Rodrigo Díaz                         \e[38;5;17m#\e[39m" "#                          Copyright (c) 2017 Diego González, Rodrigo Díaz                         #"
+		log 1 "\e[38;5;17m#\e[39m                      ――――――――――――――――――――――――――――――――――――――――――――――――――――――                      \e[38;5;17m#\e[39m" "#                      ――――――――――――――――――――――――――――――――――――――――――――――――――――――                      #"
+		log 1 "\e[38;5;17m#\e[39m                   You may:                                                                       \e[38;5;17m#\e[39m" "#                   You may:                                                                       #"
+		log 1 "\e[38;5;17m#\e[39m                     - Use the work commercially                                                  \e[38;5;17m#\e[39m" "#                     - Use the work commercially                                                  #"
+		log 1 "\e[38;5;17m#\e[39m                     - Make changes to the work                                                   \e[38;5;17m#\e[39m" "#                     - Make changes to the work                                                   #"
+		log 1 "\e[38;5;17m#\e[39m                     - Distribute the compiled code and/or source.                                \e[38;5;17m#\e[39m" "#                     - Distribute the compiled code and/or source.                                #"
+		log 1 "\e[38;5;17m#\e[39m                     - Incorporate the work into something that                                   \e[38;5;17m#\e[39m" "#                     - Incorporate the work into something that                                   #"
+		log 1 "\e[38;5;17m#\e[39m                       has a more restrictive license.                                            \e[38;5;17m#\e[39m" "#                       has a more restrictive license.                                            #"
+		log 1 "\e[38;5;17m#\e[39m                     - Use the work for private use                                               \e[38;5;17m#\e[39m" "#                     - Use the work for private use                                               #"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%98s" " ")\e[38;5;17m#\e[39m" "#$(printf "%98s" " ")#"
+		log 1 "\e[38;5;17m#\e[39m                   You must:                                                                      \e[38;5;17m#\e[39m" "#                   You must:                                                                      #"
+		log 1 "\e[38;5;17m#\e[39m                     - Include the copyright notice in all                                        \e[38;5;17m#\e[39m" "#                     - Include the copyright notice in all                                        #"
+		log 1 "\e[38;5;17m#\e[39m                       copies or substantial uses of the work                                     \e[38;5;17m#\e[39m" "#                       copies or substantial uses of the work                                     #"
+		log 1 "\e[38;5;17m#\e[39m                     - Include the license notice in all copies                                   \e[38;5;17m#\e[39m" "#                     - Include the license notice in all copies                                   #"
+		log 1 "\e[38;5;17m#\e[39m                       or substantial uses of the work                                            \e[38;5;17m#\e[39m" "#                       or substantial uses of the work                                            #"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%98s" " ")\e[38;5;17m#\e[39m" "#$(printf "%98s" " ")#"
+		log 1 "\e[38;5;17m#\e[39m                   You cannot:                                                                    \e[38;5;17m#\e[39m" "#                   You cannot:                                                                    #"
+		log 1 "\e[38;5;17m#\e[39m                     - Hold the author liable. The work is                                        \e[38;5;17m#\e[39m" "#                     - Hold the author liable. The work is                                        #"
+		log 1 "\e[38;5;17m#\e[39m                       provided \"as is\".                                                          \e[38;5;17m#\e[39m" "#                       provided \"as is\".                                                          #"
+		log 1 "\e[38;5;17m#\e[39m$(printf "%98s" " ")\e[38;5;17m#\e[39m" "#$(printf "%98s" " ")#"
 		header 0 2
 		log 1
 	fi
 	if [[ $nivel_log -le 3 ]]; then
 		log 1 'CABECERA DEL PROGRAMA:' '@'
 		header 0 2
-		log 3 "\e[38;5;17m#\e[39m$(printf "%88s" " ")\e[38;5;17m#\e[39m" "#$(printf "%88s" " ")#"
-		log 3 "\e[38;5;17m#\e[39m                        \e[48;5;17mSRPT, Paginación, FIFO, Memoria Continua,\e[0m                       \e[38;5;17m#" "#                        SRPT, Paginación, FIFO, Memoria Continua,                       #"
-		log 3 "\e[38;5;17m#\e[39m                       \e[48;5;17mFijas e iguales, Primer ajuste y Reubicable\e[0m                      \e[38;5;17m#" "#                       Fijas e iguales, Primer ajuste y Reubicable                      #"
-		log 3 "\e[38;5;17m#\e[38;5;20m                 ――――――――――――――――――――――――――――――――――――――――――――――――――――――                 \e[38;5;17m#" "#                 ――――――――――――――――――――――――――――――――――――――――――――――――――――――                 #"
-		log 3 "\e[38;5;17m#\e[96m                Alumnos:                                                                \e[38;5;17m#" "#                Alumnos:                                                                #"
-		log 3 "\e[38;5;17m#\e[96m                  - González Román, Diego                                               \e[38;5;17m#" "#                  - González Román, Diego                                               #"
-		log 3 "\e[38;5;17m#\e[96m                  - Díaz García, Rodrigo                                                \e[38;5;17m#" "#                  - Díaz García, Rodrigo                                                #"
-		log 3 "\e[38;5;17m#\e[96m                Sistemas Operativos, Universidad de Burgos                              \e[38;5;17m#" "#                Sistemas Operativos, Universidad de Burgos                              #"
-		log 3 "\e[38;5;17m#\e[96m                Grado en ingeniería informática (2016-2017)                             \e[38;5;17m#" "#                Grado en ingeniería informática (2016-2017)                             #"
-		log 3 "\e[38;5;17m#\e[39m$(printf "%88s" " ")\e[38;5;17m#\e[39m" "#$(printf "%88s" " ")#"
+		log 3 "\e[38;5;17m#\e[39m$(printf "%98s" " ")\e[38;5;17m#\e[39m" "#$(printf "%98s" " ")#"
+		log 3 "\e[38;5;17m#\e[39m                             \e[48;5;17mSRPT, Paginación, FIFO, Memoria Continua,\e[0m                            \e[38;5;17m#" "#                             SRPT, Paginación, FIFO, Memoria Continua,                            #"
+		log 3 "\e[38;5;17m#\e[39m                            \e[48;5;17mFijas e iguales, Primer ajuste y Reubicable\e[0m                           \e[38;5;17m#" "#                            Fijas e iguales, Primer ajuste y Reubicable                           #"
+		log 3 "\e[38;5;17m#\e[38;5;20m                      ――――――――――――――――――――――――――――――――――――――――――――――――――――――                      \e[38;5;17m#" "#                      ――――――――――――――――――――――――――――――――――――――――――――――――――――――                      #"
+		log 3 "\e[38;5;17m#\e[96m                     Alumnos:                                                                     \e[38;5;17m#" "#                     Alumnos:                                                                     #"
+		log 3 "\e[38;5;17m#\e[96m                       - González Román, Diego                                                    \e[38;5;17m#" "#                       - González Román, Diego                                                    #"
+		log 3 "\e[38;5;17m#\e[96m                       - Díaz García, Rodrigo                                                     \e[38;5;17m#" "#                       - Díaz García, Rodrigo                                                     #"
+		log 3 "\e[38;5;17m#\e[96m                     Sistemas Operativos, Universidad de Burgos                                   \e[38;5;17m#" "#                     Sistemas Operativos, Universidad de Burgos                                   #"
+		log 3 "\e[38;5;17m#\e[96m                     Grado en ingeniería informática (2016-2017)                                  \e[38;5;17m#" "#                     Grado en ingeniería informática (2016-2017)                                  #"
+		log 3 "\e[38;5;17m#\e[39m$(printf "%98s" " ")\e[38;5;17m#\e[39m" "#$(printf "%98s" " ")#"
 		header 0 2
 		log 3
 	fi
@@ -1441,6 +1552,7 @@ function cabeceraLog() {
 
 SECONDS=0
 declare -a proc_id proc_estado proc_tamano proc_paginas proc_direcciones proc_tiempo_llegada proc_tiempo_salida proc_tiempo_ejecucion proc_tiempo_ejecucion_restante proc_tiempo_espera proc_tiempo_respuesta proc_posicion proc_paginas_apuntador proc_paginas_fallos proc_orden mem_paginas mem_proc_id mem_proc_index mem_proc_tamano swp_proc_id swp_proc_index out_proc_index proc_color_secuencia linea_tiempo
+declare -A proc_paginas_evolucion
 declare -i proc_count mem_tamano mem_usada tiempo mem_tamano_redondeado mem_usada_redondeado proc_count_redondeado nivel_log=3
 declare mem_tamano_abreviacion mem_usada_abreviacion proc_count_abreviacion evento evento_log evento_log_NoEsc filename
 
