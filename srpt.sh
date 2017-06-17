@@ -521,7 +521,7 @@ function salidaEjecucion() {
 				posicion="${i},$((proc_tiempo_ejecucion[i]+j)),p"
 				fallo="${proc_paginas_evolucion["$posicion"]}"
 				if [[ ! -z $fallo ]] && [[ $fallo -ge 0 ]]; then
-					paginas_color[$((9-j))]="1;${proc_color[i]}"
+					paginas_color[$((9-j))]="7;${proc_color[i]}"
 				else
 					paginas_color[$((9-j))]="${proc_color[i]}"
 				fi
@@ -1184,11 +1184,11 @@ function evolucionPaginas() {
 			if [[ $pagina -ne -1 ]]; then
 				linea_buffer="$(printf "%2d " "$pagina")"
 				if [[ $j -eq $apuntador ]]; then
-					linea+="| \e[91m$linea_buffer\e[0m"
+					linea+="| \e[7;${proc_color[index]}m$linea_buffer\e[0m"
 					linea_no_esc+="|>$linea_buffer"
 				else
 					if [[ $apuntador -lt 0 ]] && [[ $j -eq $((-apuntador-1)) ]]; then
-						linea+="| \e[94m$linea_buffer\e[0m"
+						linea+="| \e[${proc_color[index]}m$linea_buffer\e[0m"
 						linea_no_esc+="|-$linea_buffer"
 					else
 						linea+="| $linea_buffer"
